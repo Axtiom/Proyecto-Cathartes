@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Axtiom — Proyectos: SiGeRU / Cathartes, sistema de gestión de residuos urbanos." />
+  <title>Axtiom · Proyectos</title>
+  <link rel="stylesheet" href="styles.css" />
+  --- css personalizado ---
+  <style>
+    [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    [data-reveal].revealed { opacity: 1; transform: translateY(0); }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2.5rem;
+    }
+    .module-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      transition: all var(--transition);
+    }
+    .module-card:hover {
+      border-color: var(--color-violet);
+      transform: translateY(-3px);
+    }
+    .module-card__icon  { font-size: 1.6rem; margin-bottom: 0.75rem; }
+    .module-card__title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .module-card__text  { font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.6; }
+
+    .tech-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.7rem;
+      border-radius: 99px;
+      background: var(--color-violet-glow);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      margin: 0.2rem;
+    }
+
+    .coming-soon {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--color-surface);
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      color: var(--color-text-muted);
+    }
+    .coming-soon__icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+    .coming-soon__text { font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== ENCABEZADO ===== -->
+  <header class="header">
+    <nav class="nav container">
+      <a href="index.html" class="nav__brand" aria-label="Axtiom – Inicio">
+        <img src="Logo empresa.jpeg" alt="Logo de Axtiom" class="nav__logo" />
+        <span class="nav__brand-name">A<span>x</span>tiom</span>
+      </a>
+
+      <button class="nav__toggle" aria-label="Alternar navegación" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+      <ul class="nav__links" role="list">
+        <li><a href="index.html"          class="nav__link">Inicio</a></li>
+        <li><a href="quienes-somos.html"  class="nav__link">Quiénes Somos</a></li>
+        <li><a href="mision.html"         class="nav__link">Misión</a></li>
+        <li><a href="vision.html"         class="nav__link">Visión</a></li>
+        <li><a href="proyectos.html"      class="nav__link nav__link--active">Proyectos</a></li>
+        <li><a href="contacto.html"       class="nav__link">Contacto</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ===== CONTENIDO PRINCIPAL ===== -->
+  <main>
+
+    <!-- Hero de página -->
+    <section class="page-hero">
+      <div class="container">
+        <div class="tag">Nuestro Trabajo</div>
+        <h1 class="page-hero__title">Proyectos</h1>
+        <p class="page-hero__subtitle">
+          Software construido para problemas reales. Esto es en lo que hemos estado trabajando.
+        </p>
+      </div>
+    </section>
+
+    <!-- SiGeRU / Cathartes — proyecto insignia -->
+    <section class="section">
+      <div class="container">
+
+        <div class="divider"></div>
+        <div class="tag">Proyecto Insignia</div>
+
+        <div class="project-card" data-reveal>
+
+          <!-- Cabecera de la tarjeta -->
+          <div class="project-card__header">
+            <div class="project-card__badge">
+              🌿 En desarrollo activo
+            </div>
+            <h2 class="project-card__name">SiGeRU</h2>
+            <p class="project-card__alias">
+              Sistema de Gestión de Residuos Urbanos &nbsp;·&nbsp;
+              <em>También conocido como: <strong>Cathartes</strong></em>
+            </p>
+          </div>
+
+          <!-- Cuerpo de la tarjeta -->
+          <div class="project-card__body">
+
+            <p class="project-card__desc">
+              <!-- [TODO: Reemplazar/ampliar con la descripción definitiva de SiGeRU] -->
+              SiGeRU — con nombre en clave <strong>Cathartes</strong> — es un sistema de
+              gestión de incidentes de residuos urbanos diseñado para modernizar la manera
+              en que las ciudades manejan los reportes y la resolución de residuos. Conecta
+              a tres actores en una sola plataforma: <em>ciudadanos</em> que reportan
+              incidentes, <em>administradores</em> que los validan y asignan, y
+              <em>cuadrillas de campo</em> que los resuelven — todo rastreado en tiempo
+              real desde el reporte hasta el cierre.
+            </p>
+
+            <p class="project-card__desc">
+              <!-- [TODO: Contexto adicional de SiGeRU] -->
+              Una capa de gamificación recompensa a los ciudadanos más activos y mantiene
+              el nivel de participación alto, convirtiendo la gestión de residuos de un
+              servicio pasivo en un esfuerzo comunitario. El sistema prioriza la claridad,
+              la velocidad y la rendición de cuentas en cada paso.
+            </p>
+
+            <!-- Lista de características -->
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">Características principales</h3>
+            <div class="feature-list">
+              <div class="feature-item">
+                <span><strong>Reportes ciudadanos</strong> — interfaz optimizada para móviles que permite
+                enviar incidentes de residuos con ubicación, foto y descripción.</span>
+              </div>
+              <div class="feature-item">
+                <span><strong>Validación administrativa</strong> — panel para que los administradores
+                municipales revisen, prioricen y aprueben los reportes recibidos.</span>
+              </div>
+              <div class="feature-item">
+                <span><strong>Asignación de cuadrillas</strong> — herramientas automáticas y manuales
+                para despachar la cuadrilla adecuada a cada incidente validado.</span>
+              </div>
+              <div class="feature-item">
+                <span><strong>Seguimiento de resoluciones</strong> — visibilidad completa del ciclo de
+                vida, desde el reporte inicial hasta la resolución y el cierre.</span>
+              </div>
+              <div class="feature-item">
+                <span><strong>Capa de gamificación</strong> — puntos, insignias y tablas de clasificación
+                que incentivan a los ciudadanos a seguir reportando y participando.</span>
+              </div>
+              <div class="feature-item">
+                <!-- [TODO: Características adicionales] -->
+                <span><strong>[TODO: Característica 6]</strong> — [marcador de posición para una característica adicional de SiGeRU].</span>
+              </div>
+            </div>
+
+            <!-- Módulos del sistema -->
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;margin-top:2rem;">Módulos del sistema</h3>
+
+            <div class="module-grid">
+              <div class="module-card">
+                <div class="module-card__icon">📱</div>
+                <p class="module-card__title">App Ciudadana</p>
+                <p class="module-card__text">
+                  Reportar incidentes, hacer seguimiento de su estado y ganar recompensas de gamificación.
+                </p>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card__icon">🖥️</div>
+                <p class="module-card__title">Panel Administrativo</p>
+                <p class="module-card__text">
+                  Validar reportes, gestionar cuadrillas y monitorear métricas de resolución.
+                </p>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card__icon">🚛</div>
+                <p class="module-card__title">Vista de Cuadrillas</p>
+                <p class="module-card__text">
+                  Recibir asignaciones, actualizar el estado en campo y cerrar incidentes.
+                </p>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card__icon">🏆</div>
+                <p class="module-card__title">Motor de Gamificación</p>
+                <p class="module-card__text">
+                  Puntos, niveles y logros que recompensan la participación cívica.
+                </p>
+              </div>
+            </div>
+
+            <!-- Etiquetas de tecnología -->
+            <div style="margin-top:2rem;">
+              <h3 style="font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:0.75rem;">
+                Stack tecnológico
+              </h3>
+              <!-- [TODO: Reemplazar con el stack real utilizado en SiGeRU] -->
+              <div>
+                <span class="tech-tag">[TODO: Backend]</span>
+                <span class="tech-tag">[TODO: Frontend]</span>
+                <span class="tech-tag">[TODO: Base de datos]</span>
+                <span class="tech-tag">[TODO: Autenticación]</span>
+                <span class="tech-tag">[TODO: Mapas / SIG]</span>
+                <span class="tech-tag">[TODO: Despliegue]</span>
+              </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div style="margin-top:2.5rem;display:flex;gap:1rem;flex-wrap:wrap;">
+              <!-- [TODO: Agregar enlaces reales cuando el repositorio/demo sea público] -->
+              <a href="#" class="btn btn--primary" style="opacity:0.5;pointer-events:none;cursor:default;">
+                Demo en vivo (próximamente)
+              </a>
+              <a href="#" class="btn btn--outline" style="opacity:0.5;pointer-events:none;cursor:default;">
+                Repositorio (próximamente)
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Próximos proyectos -->
+    <section class="section section--alt">
+      <div class="container">
+        <div class="tag">Lo que viene</div>
+        <h2 class="section-title" data-reveal>Más proyectos en el horizonte</h2>
+        <p class="section-subtitle" data-reveal>
+          SiGeRU es nuestro primero, pero no el último. Más tecnología cívica está en camino.
+        </p>
+
+        <div class="coming-soon" data-reveal>
+          <div class="coming-soon__icon">🔭</div>
+          <p style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">
+            [TODO: Nombre del próximo proyecto]
+          </p>
+          <p class="coming-soon__text">
+            <!-- [TODO: Breve descripción del próximo proyecto] -->
+            Los detalles sobre futuros proyectos de Axtiom aparecerán aquí.
+            Mantente atento.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section" style="text-align:center;">
+      <div class="container" data-reveal>
+        <div class="tag">Colabora</div>
+        <h2 class="section-title">¿Te interesa nuestro trabajo?</h2>
+        <p class="section-subtitle" style="margin-inline:auto;">
+          <!-- [TODO: Texto del llamado a la acción] -->
+          Si quieres saber más sobre SiGeRU, hablar de una posible colaboración
+          o simplemente conversar sobre tecnología cívica — escríbenos.
+        </p>
+        <a href="contacto.html" class="btn btn--primary">Contactar a Axtiom</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== PIE DE PÁGINA ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div>
+          <div class="footer__brand">
+            <img src="Logo empresa.jpeg" alt="Logo de Axtiom" class="footer__logo" />
+            <span class="footer__brand-name">A<span>x</span>tiom</span>
+          </div>
+          <p class="footer__desc">
+            Equipo de desarrollo de software que construye tecnología cívica con propósito.
+          </p>
+        </div>
+        <div>
+          <p class="footer__heading">Navegar</p>
+          <nav class="footer__nav" aria-label="Navegación del pie de página">
+            <a href="index.html">Inicio</a>
+            <a href="quienes-somos.html">Quiénes Somos</a>
+            <a href="mision.html">Misión</a>
+            <a href="vision.html">Visión</a>
+            <a href="proyectos.html">Proyectos</a>
+            <a href="contacto.html">Contacto</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>&copy; 2026 Axtiom. Todos los derechos reservados.</span>
+        <span style="color:var(--color-violet);">Construido con propósito.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

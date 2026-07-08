@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Axtiom — Conoce al equipo detrás del software." />
+  <title>Axtiom · Quiénes Somos</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    [data-reveal].revealed { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- ===== ENCABEZADO ===== -->
+  <header class="header">
+    <nav class="nav container">
+      <a href="index.html" class="nav__brand" aria-label="Axtiom – Inicio">
+        <img src="Logo empresa.jpeg" alt="Logo de Axtiom" class="nav__logo" />
+        <span class="nav__brand-name">A<span>x</span>tiom</span>
+      </a>
+
+      <button class="nav__toggle" aria-label="Alternar navegación" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+      <ul class="nav__links" role="list">
+        <li><a href="index.html"          class="nav__link">Inicio</a></li>
+        <li><a href="quienes-somos.html"  class="nav__link nav__link--active">Quiénes Somos</a></li>
+        <li><a href="mision.html"         class="nav__link">Misión</a></li>
+        <li><a href="vision.html"         class="nav__link">Visión</a></li>
+        <li><a href="proyectos.html"      class="nav__link">Proyectos</a></li>
+        <li><a href="contacto.html"       class="nav__link">Contacto</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ===== CONTENIDO PRINCIPAL ===== -->
+  <main>
+
+    <!-- Hero de página -->
+    <section class="page-hero">
+      <div class="container">
+        <div class="tag">Quiénes Somos</div>
+        <h1 class="page-hero__title">
+          El equipo detrás de <span class="highlight">Axtiom</span>
+        </h1>
+        <p class="page-hero__subtitle">
+          Cuatro desarrolladores, un objetivo compartido: software que genera impacto real.
+        </p>
+      </div>
+    </section>
+
+    <!-- Quiénes somos -->
+    <section class="section">
+      <div class="container">
+        <div class="divider"></div>
+        <h2 class="section-title" data-reveal>Quiénes somos</h2>
+        <p class="section-subtitle" data-reveal>
+          <!-- [TODO: Reemplazar con el párrafo definitivo de "quiénes somos"] -->
+          Axtiom es un equipo de desarrollo de software formado por cuatro estudiantes
+          universitarios unidos por su pasión por la tecnología y su convicción de que el
+          software puede mejorar la vida cotidiana. Combinamos rigor académico con un
+          enfoque práctico y orientado al producto — desarrollando aplicaciones confiables,
+          mantenibles y genuinamente útiles para quienes las usan.
+        </p>
+
+        <p style="color:var(--color-text-muted);max-width:70ch;margin-bottom:2rem;" data-reveal>
+          <!-- [TODO: Párrafo adicional — historia de origen, valores, enfoque] -->
+          Nuestro equipo se unió en torno a una frustración compartida: demasiados problemas
+          cívicos quedan sin solución porque el software para abordarlos simplemente no existe,
+          o existe pero nadie lo usa. Nos propusimos cambiar eso, comenzando por la gestión de
+          residuos urbanos y expandiéndonos desde allí.
+        </p>
+
+        <!-- Estadísticas -->
+        <div class="stats" style="margin-bottom:3rem;" data-reveal>
+          <div class="stat">
+            <div class="stat__value">4</div>
+            <div class="stat__label">Integrantes del equipo</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value">1</div>
+            <div class="stat__label">Proyecto activo</div>
+          </div>
+          <div class="stat">
+            <!-- [TODO: Reemplazar con una métrica real] -->
+            <div class="stat__value">2026</div>
+            <div class="stat__label">Año de fundación</div>
+          </div>
+          <div class="stat">
+            <div class="stat__value">100%</div>
+            <div class="stat__label">Desarrollado por estudiantes</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Equipo -->
+    <section class="section section--alt">
+      <div class="container">
+        <div class="tag">El Equipo</div>
+        <h2 class="section-title" data-reveal>Conoce a los desarrolladores</h2>
+        <p class="section-subtitle" data-reveal>
+          <!-- [TODO: Línea introductoria del equipo] -->
+          Un equipo pequeño y enfocado con habilidades complementarias y mucho café.
+        </p>
+
+        <div class="team-grid" data-reveal>
+          <!-- [TODO: Reemplazar iniciales, nombres y roles con los datos reales del equipo] -->
+          <div class="team-card">
+            <div class="team-card__avatar">D1</div>
+            <p class="team-card__name">Juan Manuel Novoa</p>
+            <p class="team-card__role">[TODO: Rol]</p>
+          </div>
+
+          <div class="team-card">
+            <div class="team-card__avatar">D2</div>
+            <p class="team-card__name">[Desarrollador 2]</p>
+            <p class="team-card__role">[TODO: Rol]</p>
+          </div>
+
+          <div class="team-card">
+            <div class="team-card__avatar">D3</div>
+            <p class="team-card__name">[Desarrollador 3]</p>
+            <p class="team-card__role">[TODO: Rol]</p>
+          </div>
+
+          <div class="team-card">
+            <div class="team-card__avatar">D4</div>
+            <p class="team-card__name">[Desarrollador 4]</p>
+            <p class="team-card__role">[TODO: Rol]</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Valores -->
+    <section class="section">
+      <div class="container">
+        <div class="tag">Lo que nos mueve</div>
+        <h2 class="section-title" data-reveal>Nuestros valores</h2>
+
+        <div data-reveal>
+          <div class="value-block">
+            <div class="value-block__num">01</div>
+            <div>
+              <p class="value-block__title">Impacto sobre volumen</p>
+              <p class="value-block__text">
+                Medimos el éxito por la diferencia real que genera nuestro software,
+                no por líneas de código o funcionalidades entregadas.
+              </p>
+            </div>
+          </div>
+
+          <div class="value-block">
+            <div class="value-block__num">02</div>
+            <div>
+              <p class="value-block__title">Calidad como hábito</p>
+              <p class="value-block__text">
+                La arquitectura limpia, el código legible y las pruebas exhaustivas
+                no son extras — son el punto de partida.
+              </p>
+            </div>
+          </div>
+
+          <div class="value-block">
+            <div class="value-block__num">03</div>
+            <div>
+              <p class="value-block__title">Aprendizaje continuo</p>
+              <p class="value-block__text">
+                <!-- [TODO: Texto del valor] -->
+                Somos estudiantes en el sentido más genuino — siempre curiosos,
+                siempre mejorando, siempre abiertos a un enfoque mejor.
+              </p>
+            </div>
+          </div>
+
+          <div class="value-block">
+            <div class="value-block__num">04</div>
+            <div>
+              <p class="value-block__title">Colaboración ante todo</p>
+              <p class="value-block__text">
+                <!-- [TODO: Texto del valor] -->
+                El software de calidad es un deporte de equipo. Nos comunicamos
+                abiertamente, revisamos el trabajo de los demás y celebramos los
+                logros juntos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section section--alt" style="text-align:center;">
+      <div class="container" data-reveal>
+        <h2 class="section-title">¿Quieres trabajar con nosotros?</h2>
+        <p class="section-subtitle" style="margin-inline:auto;">
+          <!-- [TODO: Texto del llamado a la acción] -->
+          Siempre estamos abiertos a conversaciones interesantes sobre tecnología,
+          impacto cívico e ideas nuevas.
+        </p>
+        <a href="contacto.html" class="btn btn--primary">Contáctanos</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== PIE DE PÁGINA ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div>
+          <div class="footer__brand">
+            <img src="Logo empresa.jpeg" alt="Logo de Axtiom" class="footer__logo" />
+            <span class="footer__brand-name">A<span>x</span>tiom</span>
+          </div>
+          <p class="footer__desc">
+            Equipo de desarrollo de software que construye tecnología cívica con propósito.
+          </p>
+        </div>
+        <div>
+          <p class="footer__heading">Navegar</p>
+          <nav class="footer__nav" aria-label="Navegación del pie de página">
+            <a href="index.html">Inicio</a>
+            <a href="quienes-somos.html">Quiénes Somos</a>
+            <a href="mision.html">Misión</a>
+            <a href="vision.html">Visión</a>
+            <a href="proyectos.html">Proyectos</a>
+            <a href="contacto.html">Contacto</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>&copy; 2026 Axtiom. Todos los derechos reservados.</span>
+        <span style="color:var(--color-violet);">Construido con propósito.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
