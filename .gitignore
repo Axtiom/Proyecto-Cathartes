@@ -1,0 +1,33 @@
+# --- Credenciales ---
+.env
+.env.*
+config/database.php
+**/config.local.php
+
+# --- Dependencias ---
+/vendor/
+/node_modules/
+composer.phar
+
+# --- Base de datos ---
+*.sql
+*.sqlite
+*.db
+!schema.sql
+!seeds/*.sql
+
+# --- IDEs ---
+.idea/
+.vscode/
+*.iml
+
+# --- Windows / OS ---
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# --- Logs y temporales ---
+*.log
+/logs/
+/tmp/
+/cache/
