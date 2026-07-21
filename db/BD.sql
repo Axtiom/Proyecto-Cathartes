@@ -32,7 +32,7 @@ CREATE TABLE usuario (
     ID              INT             AUTO_INCREMENT,
     nombre          VARCHAR(100)    NOT NULL,
     email           VARCHAR(150)    NOT NULL,
-    `contraseña`    VARCHAR(255)    NOT NULL,
+    `contrasena`    VARCHAR(255)    NOT NULL,
     estado          ENUM('activo','no activo') NOT NULL DEFAULT 'no activo',
     PRIMARY KEY (ID),
     UNIQUE KEY uq_usuario_email (email)
