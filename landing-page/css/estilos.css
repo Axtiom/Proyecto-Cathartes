@@ -111,7 +111,7 @@ a { color: inherit; text-decoration: none; }
             rgba(11, 16, 32, 0.74) 47%,
             rgba(11, 16, 32, 0.32) 72%,
             rgba(11, 16, 32, 0.10) 100%),
-        url('/assets/img/hero-camion.avif');
+        url('../assets/img/hero-camion.avif');
     background-size: cover, cover;
     background-position: center, right center;
     background-repeat: no-repeat;
@@ -161,7 +161,7 @@ a { color: inherit; text-decoration: none; }
     .seccion--hero {
         background-image:
             linear-gradient(180deg, rgba(11,16,32,0.55) 0%, rgba(11,16,32,0.85) 100%),
-            url('/assets/img/hero-camion.avif');
+            url('../assets/img/hero-camion.avif');
         background-position: center, center;
         padding-block: 96px 80px;
     }
