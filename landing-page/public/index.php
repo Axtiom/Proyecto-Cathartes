@@ -8,11 +8,13 @@ declare(strict_types=1);
 
 define('BASE_PATH', dirname(__DIR__));
 
+require BASE_PATH . '/app/Core/Env.php';
 require BASE_PATH . '/app/Core/Config.php';
 require BASE_PATH . '/app/Core/Router.php';
 require BASE_PATH . '/app/Core/Controller.php';
 require BASE_PATH . '/app/Core/View.php';
 
+Env::cargar(BASE_PATH . '/.env');
 Config::cargar(require BASE_PATH . '/config/config.php');
 
 $router = new Router();
