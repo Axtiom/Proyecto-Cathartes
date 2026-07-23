@@ -56,7 +56,10 @@
 
     var CONFIG = {
         // Base de la API de Usuarios. Ajustar por entorno (equivalente al .env).
-        apiUsuarios: 'http://127.0.0.1:8081'
+        // Mismo origen que el frontend (Apache :80) -> sin CORS. El Router de la
+        // API recorta el prefijo del subdirectorio solo, así que esta URL sirve
+        // igual en local (subcarpeta) que en el vhost raíz de producción.
+        apiUsuarios: 'http://localhost/sigeru/api-usuarios/public'
     };
 
     var K_TOKEN    = 'cathartes.token';

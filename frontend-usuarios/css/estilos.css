@@ -38,6 +38,11 @@
 
 * { box-sizing: border-box; }
 
+/* Normalización: el atributo `hidden` debe ganar aunque la clase declare
+   display (p. ej. .aviso{display:flex}). Sin esto, las cajas de flash/error
+   con `hidden` se muestran vacías. Toggle desde JS con el.hidden = true/false. */
+[hidden] { display: none !important; }
+
 body {
     margin: 0;
     font-family: var(--fuente);
