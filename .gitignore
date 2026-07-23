@@ -30,3 +30,8 @@ desktop.ini
 /logs/
 /tmp/
 /cache/
+
+# --- Archivo de trabajo con Claude Code (interno, NO sube al equipo) ---
+# Por nombre exacto anclado a la raíz: NO usar *.md (CREDITS.md, BUGS.md y
+# README.md SÍ tienen que commitearse).
+/CLAUDE.md
