@@ -22,8 +22,7 @@ class Router
 
     public function dispatch(string $uri, string $method): void
     {
-        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
-        $path = rtrim($path, '/') ?: '/';
+        $path = $this->normalizarPath($uri);
 
         foreach ($this->rutas as $ruta) {
             if ($ruta['method'] === $method && $ruta['path'] === $path) {
@@ -32,6 +31,27 @@ class Router
             }
         }
         $this->noEncontrado();
+    }
+
+    /**
+     * Normaliza el path de la request recortando dinámicamente el prefijo del
+     * subdirectorio donde vive el front controller. El prefijo se deduce de
+     * SCRIPT_NAME (p. ej. `/sigeru/api-usuarios/public/index.php` -> base
+     * `/sigeru/api-usuarios/public`), NADA hardcodeado. Así las rutas (`/health`,
+     * `/login`, ...) matchean igual servidas en subcarpeta (Apache local) o en
+     * la raíz de un vhost (Rocky Linux). En la raíz, la base es `/` y no recorta.
+     */
+    private function normalizarPath(string $uri): string
+    {
+        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+
+        $base = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        if ($base !== '' && $base !== '/' && $base !== '.' && strpos($path, $base) === 0) {
+            $path = substr($path, strlen($base));
+        }
+
+        $path = '/' . ltrim($path, '/');
+        return rtrim($path, '/') ?: '/';
     }
 
     private function invocar(string $controller, string $action): void
