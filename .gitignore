@@ -7,8 +7,8 @@ config/database.php
 **/config.local.php
 
 # --- Dependencias ---
-/vendor/
-/node_modules/
+vendor/
+node_modules/
 composer.phar
 
 # --- Base de datos ---

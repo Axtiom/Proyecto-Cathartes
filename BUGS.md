@@ -19,6 +19,9 @@
 | BUG-001 | 2026-07-20 | Git / config     | `.gitignore` ignoraba también los `.env.example`    | alta      | RESUELTO |
 | BUG-002 | 2026-07-20 | Frontend / CSS   | Columnas desiguales en `.fila-2` (registro)         | baja      | RESUELTO |
 | BUG-003 | 2026-07-20 | BD / import      | Columna `contraseña` importada como `contrase├▒a`   | crítica   | RESUELTO |
+| BUG-004 | 2026-07-23 | Frontend / CSS   | Cajas `.aviso` con `hidden` se mostraban vacías      | media     | RESUELTO |
+| BUG-005 | 2026-07-23 | APIs / Router    | El Router solo matchea en la raíz del dominio        | alta      | RESUELTO |
+| BUG-006 | 2026-07-23 | Entorno / hosting| Apache servía una copia stale de `htdocs\sigeru`     | alta      | RESUELTO |
 
 ---
 
@@ -161,3 +164,135 @@ tilde). Un identificador ASCII no se puede corromper por codificación. Se tocó
 **Verificación.** E2E por la API (registro → login 403 → aprobar → 2FA → `/yo` →
 kill-switch → recuperar → restablecer → login con clave nueva): 10/10 OK.
 `HEX(COLUMN_NAME)` de la nueva columna = `636F6E74726173656E61` (ASCII puro).
+
+---
+
+### BUG-004 — Las cajas `.aviso` con `hidden` se mostraban vacías
+
+- **Fecha:** 2026-07-23
+- **Área:** Frontend de Usuarios / CSS (conversión PHP→HTML de la reestructuración)
+- **Severidad:** media (rompe el visual de todas las pantallas de acceso)
+- **Estado:** RESUELTO
+- **Detectado en:** revisión visual de `login.html` (captura de Juan) tras pasar
+  los frontends a HTML/CSS/JS.
+
+**Síntoma.** Arriba de "Correo electrónico" aparecía una caja vacía (parecía un
+input sin etiqueta) y otra con borde rojo, ícono y sin texto. Eran las cajas de
+flash (`.aviso--dev`) y de error (`.aviso--error`), que en PHP estaban dentro de
+un `<?php if (...) ?>` y ahora traían el atributo `hidden` — pero se mostraban
+igual, vacías.
+
+**Causa.** `.aviso { display: flex }` (hoja de autor) le gana a
+`[hidden] { display: none }` (hoja del navegador): a igual especificidad, el
+origen "autor" vence al "user-agent" en el cascade. El atributo `hidden`, por sí
+solo, no oculta un elemento cuya clase declara `display`. Los `panel-ok`
+(`.tarjeta`) y `.campo__error` no sufrían el bug porque sus clases no declaran
+`display`, así que ahí `[hidden]` sí aplica.
+
+**Impacto.** Puramente visual, pero en las 6 pantallas de acceso (7 cajas
+`.aviso` en total). No afecta datos ni lógica.
+
+**Solución aplicada.** Regla de normalización en `frontend-usuarios/css/estilos.css`
+(un **agregado**, no un reescrito de estilos existentes):
+
+```css
+[hidden] { display: none !important; }
+```
+
+El JS ya togglea con `el.hidden = true/false`, así que no se tocó ni HTML ni JS.
+Arregla las 7 cajas y cualquier futura.
+
+**Verificación.** Todas las cajas ocultas por defecto; se muestran solo cuando el
+controlador JS les inyecta texto por `textContent`.
+
+---
+
+### BUG-005 — El Router de las APIs solo matchea servido en la raíz del dominio
+
+- **Fecha:** 2026-07-23
+- **Área:** APIs / `app/Core/Router.php` (detectado en api-usuarios; **a replicar**
+  en api-gestion, api-recoleccion y backoffice)
+- **Severidad:** alta (la API responde 404 a todos sus endpoints bajo Apache)
+- **Estado:** RESUELTO
+- **Detectado en:** cablear el Frontend estático contra la API real por Apache.
+
+**Síntoma.** `GET http://localhost/sigeru/api-usuarios/public/health` devolvía el
+404 JSON **de la propia API** (`{"error":"no encontrado"}`), aunque el front
+controller `index.php` sí ejecutaba.
+
+**Causa.** `dispatch()` comparaba el path exacto de las rutas (`/health`,
+`/login`, ...) contra el `REQUEST_URI` **completo**. Bajo Apache en subcarpeta,
+ese path incluye el prefijo del subdirectorio
+(`/sigeru/api-usuarios/public/health`), que nunca es igual a `/health`. El Router
+asumía estar servido en la raíz del dominio, como pasa con
+`php -S host:port -t public` (por eso ahí sí andaba).
+
+**Impacto.** Con la app hosteada en subcarpeta de Apache (el caso local y
+cualquier deploy que no sea vhost raíz), **ningún** endpoint matchea → auth
+totalmente rota desde el frontend.
+
+**Solución aplicada.** Se agregó `normalizarPath()`, que recorta dinámicamente el
+prefijo deducido de `dirname($_SERVER['SCRIPT_NAME'])` — nada hardcodeado:
+
+```php
+$base = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+if ($base !== '' && $base !== '/' && $base !== '.' && strpos($path, $base) === 0) {
+    $path = substr($path, strlen($base));
+}
+```
+
+Funciona igual en subcarpeta (Apache local) y en la raíz de un vhost (Rocky
+Linux): el día del deploy no hay que cambiar nada.
+
+**A replicar.** Este mismo Router se va a copiar a las otras tres APIs/backoffice
+cuando se implementen. Arreglado una vez, se replica.
+
+**Verificación.** `GET .../public/health` por Apache → `{"ok":true,"db":true}`
+(HTTP 200); y servido en raíz con `php -S :8083` sigue dando 200. Cadena e2e
+completa (registro → 403 → aprobar → login → 2FA → `/yo` → kill-switch) OK.
+
+---
+
+### BUG-006 — Apache servía una copia stale de `htdocs\sigeru`, no el working tree
+
+- **Fecha:** 2026-07-23
+- **Área:** Entorno / hosting local (XAMPP `htdocs`)
+- **Severidad:** alta (Apache servía código viejo; se presentaba como "la API no
+  responde")
+- **Estado:** RESUELTO
+- **Detectado en:** diagnóstico de por qué el fix del Router y la reestructuración
+  no aparecían por Apache.
+
+**Síntoma.** Los cambios hechos en `D:\sigeru` no se reflejaban al servir por
+Apache: la API y la landing devolvían versiones viejas; el frontend apuntaba a
+`http://127.0.0.1:8081`, un puerto donde no escuchaba nada (Apache está en :80).
+
+**Causa.** `C:\Xampp\htdocs\sigeru` **no era un link** a `D:\sigeru`: era una
+**copia manual desincronizada** (carpeta común, con fechas mezcladas 20–22 jul).
+Apache servía esa copia, ajena al working tree y a git.
+
+**Impacto.** Horas de diagnóstico confuso: fixes correctos en el repo que "no
+tenían efecto". Cualquier flujo por navegador usaba código stale.
+
+**Solución aplicada.** Se conservó la copia como backup y se reemplazó por un
+junction al working tree:
+
+```
+ren       C:\Xampp\htdocs\sigeru  sigeru-stale-20jul     (backup reversible)
+mklink /J C:\Xampp\htdocs\sigeru  D:\sigeru              (sin admin)
+```
+
+Una sola fuente de verdad: lo que se edita en `D:\sigeru` se sirve al instante.
+Además el frontend pasó a apuntar a la URL real de Apache
+(`http://localhost/sigeru/api-usuarios/public`), mismo origen que el frontend, lo
+que además elimina la necesidad de CORS. (El `ren` requirió cerrar antes una
+ventana de Explorer y una pestaña de VS Code — `BD.sql` de la copia — que tenían
+la carpeta tomada.)
+
+**Verificación.** Junction confirmado (`LinkType: Junction`, `Target: D:\sigeru`);
+Apache sirve el código nuevo (landing con `data-stat`, login con `data-page`,
+Router con `normalizarPath`); cadena e2e login→2FA→`/yo` OK.
+
+**Nota para producción.** En Rocky Linux el equivalente es un symlink
+(`ln -s /ruta/al/repo /var/www/...`) o servir el repo directo como docroot del
+vhost. No versionar copias manuales del árbol en el docroot.
