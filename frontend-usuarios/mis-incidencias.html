@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     Pantalla: MIS INCIDENCIAS (listado con filtros y paginación).
+     Datos: API Gestión (GET /vecino/incidencias).
+     JS que la acompaña: js/pantallas/mis-incidencias.js
+     Chips, thead y controles de paginación escritos a mano; las filas se clonan
+     del <template>.
+============================================================================= -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis incidencias · Cathartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="app">
+    <div data-shell-header></div>
+
+    <main class="app-main">
+        <h1 class="app-main__titulo">Mis incidencias</h1>
+        <p class="app-main__sub">Todas tus incidencias reportadas y su estado.</p>
+
+        <div class="chips" id="chips" style="margin:18px 0 16px">
+            <button type="button" class="chip chip--activo" data-filtro="todas">Todas</button>
+            <button type="button" class="chip" data-filtro="curso">En curso</button>
+            <button type="button" class="chip" data-filtro="validadas">Validadas</button>
+            <button type="button" class="chip" data-filtro="finalizadas">Finalizadas</button>
+        </div>
+
+        <div class="tabla-wrap" id="tabla-wrap">
+            <table class="tabla">
+                <thead>
+                    <tr>
+                        <th>Nº</th>
+                        <th>Fecha</th>
+                        <th>Ubicación</th>
+                        <th>Tipo</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-body"></tbody>
+            </table>
+            <div class="paginacion">
+                <span id="pag-info">Página 1 de 1</span>
+                <div class="paginacion__btns">
+                    <button type="button" id="pag-prev">Anterior</button>
+                    <button type="button" id="pag-next">Siguiente</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="vacio" id="vacio" hidden>
+            <p class="vacio__titulo">Sin incidencias</p>
+            <p class="vacio__texto">No hay incidencias con ese filtro.</p>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <!-- Molde de una fila de la tabla (valores de muestra, se reemplazan por API). -->
+    <template id="tpl-fila">
+        <tr>
+            <td class="mono" data-campo="id">0</td>
+            <td data-campo="fecha">01/01/2026</td>
+            <td data-campo="ubicacion">Av. Rivera 3245, Buceo</td>
+            <td data-campo="tipo">desbordado</td>
+            <td><span class="badge badge--desbordado" data-campo="estado">en curso</span></td>
+        </tr>
+    </template>
+
+    <script src="js/api.js"></script>
+    <script src="js/componentes/toast.js"></script>
+    <script src="js/pantallas/_comun.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/guardia.js"></script>
+    <script src="js/pantallas/mis-incidencias.js"></script>
+</body>
+</html>

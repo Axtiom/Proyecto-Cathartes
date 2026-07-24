@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     Pantalla: RECOMPENSAS (catálogo de gamificación del vecino).
+     Datos: API de Usuarios — GET /recompensas (catálogo), POST /canjes (canjear).
+     JS que la acompaña: js/pantallas/recompensas.js
+     Regla "el HTML manda": la estructura, los textos y la tarjeta de recompensa
+     (en el <template>) están escritos acá; el JS solo rellena los data-campo y
+     engancha el botón Canjear.
+============================================================================= -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recompensas · Cathartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="app">
+    <div data-shell-header></div>
+
+    <main class="app-main">
+        <h1 class="app-main__titulo">Recompensas</h1>
+        <p class="app-main__sub">Canjeá tus puntos por recompensas. Solo se habilitan las que podés pagar.</p>
+
+        <div class="panel" style="margin-bottom:22px;display:flex;align-items:center;justify-content:space-between">
+            <span style="color:var(--texto-tenue)">Puntos disponibles</span>
+            <strong style="font-family:var(--fuente-mono);color:var(--verde-vivo);font-size:20px"><span data-campo="saldo">0</span> pts</strong>
+        </div>
+
+        <!-- El JS clona una tarjeta por recompensa dentro de este contenedor. -->
+        <div class="catalogo" id="lista-recompensas"></div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <!-- Molde de una tarjeta de recompensa (valores de muestra, se reemplazan por API). -->
+    <template id="tpl-recompensa">
+        <div class="panel recompensa">
+            <div class="metrica__valor"><span data-campo="valor">300</span> pts</div>
+            <h3 data-campo="nombre">Marco «Reciclador»</h3>
+            <p class="secundario" data-campo="descripcion">Marco de perfil para vecinos recicladores.</p>
+            <button class="cta" type="button" data-accion="canjear">Canjear</button>
+            <button class="cta cta--bloqueada" type="button" data-faltan hidden disabled>Faltan <span data-campo="faltan">0</span> puntos</button>
+        </div>
+    </template>
+
+    <script src="js/api.js"></script>
+    <script src="js/componentes/toast.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/guardia.js"></script>
+    <script src="js/pantallas/recompensas.js"></script>
+</body>
+</html>

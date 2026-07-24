@@ -55,11 +55,18 @@
     'use strict';
 
     var CONFIG = {
-        // Base de la API de Usuarios. Ajustar por entorno (equivalente al .env).
-        // Mismo origen que el frontend (Apache :80) -> sin CORS. El Router de la
-        // API recorta el prefijo del subdirectorio solo, así que esta URL sirve
+        // Bases de las tres APIs. Ajustar por entorno (equivalente al .env). Mismo
+        // origen que el frontend (Apache :80) -> sin CORS. El Router de cada API
+        // recorta el prefijo del subdirectorio solo, así que estas URLs sirven
         // igual en local (subcarpeta) que en el vhost raíz de producción.
-        apiUsuarios: 'http://localhost/sigeru/api-usuarios/public'
+        //
+        // El frontend SIEMPRE habla con una API por fetch: no hay acceso a base
+        // ni "driver local" acá. Que una API sirva datos reales o todavía no
+        // exista es problema del lado servidor, no de este cliente. El contrato
+        // de cada endpoint está en docs/contratos-api.md.
+        apiUsuarios:    'http://localhost/sigeru/api-usuarios/public',
+        apiGestion:     'http://localhost/sigeru/api-gestion/public',
+        apiRecoleccion: 'http://localhost/sigeru/api-recoleccion/public'
     };
 
     var K_TOKEN    = 'cathartes.token';
@@ -110,10 +117,12 @@
     };
 
     // --------------------------------------------------------------- Api ----
-    /** Devuelve una promesa de { status, data } (data = JSON parseado o null).
-     *  Nunca rechaza: ante fallo de red devuelve status 0. */
-    function request(metodo, ruta, datos) {
-        var url = CONFIG.apiUsuarios.replace(/\/+$/, '') + '/' + String(ruta).replace(/^\/+/, '');
+    /** Hace el request contra `base`. Devuelve una promesa de { status, data }
+     *  (data = JSON parseado o null). Nunca rechaza: ante fallo de red devuelve
+     *  status 0. El token (si hay) viaja como Bearer a cualquiera de las APIs:
+     *  todas comparten el mismo secreto de firma. */
+    function request(base, metodo, ruta, datos) {
+        var url = String(base).replace(/\/+$/, '') + '/' + String(ruta).replace(/^\/+/, '');
         var headers = { 'Accept': 'application/json' };
 
         var token = Auth.token();
@@ -121,8 +130,14 @@
 
         var opts = { method: metodo, headers: headers };
         if (datos !== undefined && datos !== null) {
-            headers['Content-Type'] = 'application/json';
-            opts.body = JSON.stringify(datos);
+            if (typeof FormData !== 'undefined' && datos instanceof FormData) {
+                // Multipart (subida de archivos): NO fijar Content-Type a mano —
+                // el navegador arma el boundary de multipart/form-data solo.
+                opts.body = datos;
+            } else {
+                headers['Content-Type'] = 'application/json';
+                opts.body = JSON.stringify(datos);
+            }
         }
 
         return fetch(url, opts).then(function (resp) {
@@ -134,10 +149,24 @@
         });
     }
 
-    var Api = {
-        get:  function (ruta)        { return request('GET',  ruta, null); },
-        post: function (ruta, datos) { return request('POST', ruta, datos || {}); }
-    };
+    /** Fabrica un cliente {get, post} atado a una base de API. Un cliente por
+     *  API; nombres y contratos de los endpoints en docs/contratos-api.md. */
+    function cliente(base) {
+        return {
+            get:  function (ruta)        { return request(base, 'GET',  ruta, null); },
+            post: function (ruta, datos) { return request(base, 'POST', ruta, datos || {}); }
+        };
+    }
 
-    window.Cathartes = { config: CONFIG, Auth: Auth, Api: Api };
+    // Api = cliente de Usuarios (compatibilidad con acceso.js, que usa Api.get/post).
+    var Api = cliente(CONFIG.apiUsuarios);
+
+    window.Cathartes = {
+        config:      CONFIG,
+        Auth:        Auth,
+        Api:         Api,                          // Usuarios
+        Usuarios:    Api,                          // alias explícito
+        Gestion:     cliente(CONFIG.apiGestion),
+        Recoleccion: cliente(CONFIG.apiRecoleccion)
+    };
 })();
