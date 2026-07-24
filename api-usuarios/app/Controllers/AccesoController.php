@@ -207,6 +207,18 @@ class AccesoController extends Controller
         ]);
     }
 
+    // GET /saldo (protegido) — puntos de gamificación del vecino en sesión.
+    // Lo consume el badge del header del Frontend de Usuarios. saldo=null si el
+    // usuario no es vecino (otros roles no tienen gamificación).
+    public function saldo(): void
+    {
+        $ctx = Auth::proteger();
+        $this->json([
+            'ok'    => true,
+            'saldo' => Usuario::saldoVecino((int) $ctx['id']),
+        ]);
+    }
+
     private function error(string $mensaje, int $codigo, ?string $campo = null): void
     {
         $resp = ['ok' => false, 'error' => $mensaje];

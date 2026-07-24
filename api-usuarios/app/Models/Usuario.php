@@ -68,4 +68,16 @@ class Usuario
         $st = Database::conexion()->prepare('UPDATE usuario SET `contrasena` = ? WHERE ID = ?');
         $st->execute([$hash, $id]);
     }
+
+    /**
+     * Saldo de puntos del vecino. Devuelve null si el usuario NO es vecino
+     * (los otros roles no tienen gamificación → el frontend oculta el badge).
+     */
+    public static function saldoVecino(int $id): ?int
+    {
+        $st = Database::conexion()->prepare('SELECT saldo FROM vecino WHERE ID_usuario = ?');
+        $st->execute([$id]);
+        $val = $st->fetchColumn();
+        return $val === false ? null : (int) $val;
+    }
 }
