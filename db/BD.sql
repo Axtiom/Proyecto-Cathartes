@@ -42,6 +42,10 @@ CREATE TABLE instalacion (
     ID                  INT             AUTO_INCREMENT,
     nombre              VARCHAR(100)    NOT NULL,
     ubicacion           VARCHAR(200)    NOT NULL,
+    -- Coordenadas para el mapa interactivo (Leaflet/OSM). Columnas agregadas
+    -- 2026-07-23 (Fase 2.5): excepcion puntual al MER congelado, ver CLAUDE.md.
+    latitud             DECIMAL(9,6)    NULL,
+    longitud            DECIMAL(9,6)    NULL,
     capacidad           INT             NOT NULL,
     ocupacion_actual    INT             NOT NULL DEFAULT 0,
     tipo                ENUM('vertedero','centro de acopio') NOT NULL,
@@ -54,6 +58,8 @@ CREATE TABLE camion (
     modelo      VARCHAR(100)    NOT NULL,
     capacidad   INT             NOT NULL,
     estado      ENUM('funcional','en mantenimiento','no funcional','dado de baja') NOT NULL,
+    fecha_baja  DATETIME        NULL,
+    motivo_baja VARCHAR(255)    NULL,
     PRIMARY KEY (ID),
     UNIQUE KEY uq_camion_matricula (matricula)
 ) ENGINE=InnoDB;
@@ -116,6 +122,7 @@ CREATE TABLE operario (
 CREATE TABLE cuadrilla (
     ID_usuario  INT NOT NULL,
     ID_camion   INT NULL,
+    estado      ENUM('en servicio','fuera de servicio') NOT NULL DEFAULT 'en servicio',
     PRIMARY KEY (ID_usuario),
     UNIQUE KEY uq_cuadrilla_camion (ID_camion),
     CONSTRAINT fk_cuadrilla_usuario FOREIGN KEY (ID_usuario)
@@ -198,7 +205,9 @@ CREATE TABLE canje (
 CREATE TABLE ruta (
     ID              INT             AUTO_INCREMENT,
     nombre          VARCHAR(100)    NOT NULL,
+    zona            VARCHAR(50)     NOT NULL,
     frecuencia      VARCHAR(50)     NOT NULL,
+    estado          ENUM('activa','inactiva') NOT NULL DEFAULT 'activa',
     ID_instalacion  INT             NOT NULL,
     PRIMARY KEY (ID),
     KEY idx_ruta_instalacion (ID_instalacion),
@@ -223,6 +232,10 @@ CREATE TABLE maquinaria (
 CREATE TABLE contenedor (
     ID          INT             AUTO_INCREMENT,
     ubicacion   VARCHAR(200)    NOT NULL,
+    -- Coordenadas para el mapa interactivo (Leaflet/OSM). Columnas agregadas
+    -- 2026-07-23 (Fase 2.5): excepcion puntual al MER congelado, ver CLAUDE.md.
+    latitud     DECIMAL(9,6)    NULL,
+    longitud    DECIMAL(9,6)    NULL,
     tipo        ENUM('basura','reciclable') NOT NULL,
     estado      ENUM('funcional','no funcional','desbordado','dado de baja') NOT NULL,
     fecha_baja  DATETIME        NULL,
@@ -258,6 +271,11 @@ CREATE TABLE incidencia_historial (
     ID_incidencia   INT             AUTO_INCREMENT,
     fecha_ing       DATETIME        NOT NULL,
     descripcion     VARCHAR(255)    NULL,
+    -- Foto de la incidencia (RF-18, obligatoria al reportar desde el frontend).
+    -- Guarda el nombre/ruta relativa del archivo; los bytes viven en el disco de
+    -- la API (storage/uploads/incidencias/). NULL para filas historicas sin foto.
+    -- Columna agregada 2026-07-23: excepcion puntual al MER congelado, ver CLAUDE.md.
+    foto            VARCHAR(255)    NULL,
     tipo            ENUM('desbordado','roto','falta de recoleccion') NOT NULL,
     validada        ENUM('si','no') NOT NULL DEFAULT 'no',
     estado          ENUM('en curso','finalizada') NOT NULL DEFAULT 'en curso',
@@ -346,5 +364,30 @@ CREATE TABLE toma (
 
 
 -- =====================================================================
---  Fin del DDL - 22 tablas
+--  BLOQUE 8 - Gamificacion automatica (trigger)
+-- =====================================================================
+--  Regla de dominio (CLAUDE.md sec. 4): 150 puntos fijos por incidencia
+--  VALIDADA (no al resolver). Se acredita en la base con un trigger, no en la
+--  capa de aplicacion, para que la regla valga SIEMPRE: valide el Backoffice por
+--  su endpoint (Fase 3) o un admin por SQL directo (permitido por la consigna).
+--  Solo dispara en la transicion validada 'no' -> 'si', asi que la siembra
+--  (que inserta filas ya validadas con INSERT) no lo activa ni duplica puntos.
+--  Agregado 2026-07-23 (Fase 2). Ver CLAUDE.md.
+
+DROP TRIGGER IF EXISTS trg_incidencia_valida_puntos;
+
+DELIMITER $$
+CREATE TRIGGER trg_incidencia_valida_puntos
+AFTER UPDATE ON incidencia_historial
+FOR EACH ROW
+BEGIN
+    IF OLD.validada = 'no' AND NEW.validada = 'si' THEN
+        UPDATE vecino SET saldo = saldo + 150 WHERE ID_usuario = NEW.ID_usuario;
+    END IF;
+END$$
+DELIMITER ;
+
+
+-- =====================================================================
+--  Fin del DDL - 22 tablas + 1 trigger
 -- =====================================================================
