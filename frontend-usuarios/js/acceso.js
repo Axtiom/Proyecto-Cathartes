@@ -101,7 +101,8 @@
                     .then(function (res) {
                         var d = res.data || {};
                         if (res.status === 200 && d.need2fa) {
-                            Auth.guardarPreauth(String(d.preauth || ''), recordar);
+                            // El preauth quedó en una cookie HttpOnly que setea la API;
+                            // el JS no lo maneja. Solo pasamos a la pantalla del código.
                             if (d.debug_codigo) Auth.flash('DEV · código 2FA: ' + d.debug_codigo);
                             window.location.href = 'verificar.html';
                             return;
@@ -136,7 +137,6 @@
         },
 
         verificar: function () {
-            if (!Auth.preauth()) { window.location.href = 'login.html'; return; }
             mostrarFlash(Auth.tomarFlash()); // código 2FA en modo DEV
             initOtp();
 
@@ -145,14 +145,13 @@
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 ocultarError();
-                Api.post('/verificar', { preauth: Auth.preauth(), codigo: $('#codigo').value })
+                // El preauth va en la cookie HttpOnly; solo mandamos el código. La
+                // API valida, setea la cookie de sesión y devuelve el destino por rol.
+                Api.post('/verificar', { codigo: $('#codigo').value })
                     .then(function (res) {
                         var d = res.data || {};
-                        if (res.status === 200 && d.token) {
-                            var recordar = (d.recordar !== undefined) ? !!d.recordar : Auth.recordarPreauth();
-                            Auth.guardarToken(String(d.token), recordar);
-                            Auth.borrarPreauth();
-                            window.location.href = 'inicio.html';
+                        if (res.status === 200 && d.ok && d.destino) {
+                            window.location.href = d.destino;
                             return;
                         }
                         mostrarError(d.error || 'No pudimos verificar el código.');
@@ -189,43 +188,10 @@
                     mostrarError(d.error || 'No pudimos actualizar la contraseña.');
                 });
             });
-        },
-
-        inicio: function () {
-            if (!Auth.autenticado()) { window.location.href = 'login.html'; return; }
-
-            Api.get('/yo').then(function (res) {
-                var d = res.data || {};
-                if (res.status === 200 && d.usuario) {
-                    var u = d.usuario;
-                    // textContent en todos los campos (datos de la API).
-                    setTexto('#dato-nombre', u.nombre);
-                    setTexto('#dato-rol',    u.rol);
-                    setTexto('#dato-email',  u.email);
-                    setTexto('#dato-id',     u.id);
-                    return;
-                }
-                // 401 = cuenta desactivada (kill-switch) o token inválido.
-                Auth.limpiar();
-                Auth.flash('Tu sesión fue cerrada.');
-                window.location.href = 'login.html';
-            });
-
-            var btn = $('#logout');
-            if (btn) btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                Api.post('/logout').then(function () {
-                    Auth.limpiar();
-                    window.location.href = 'login.html';
-                });
-            });
         }
+        // (La antigua página 'inicio' se sirve ahora con guardia.js + pantallas/,
+        //  no con acceso.js: se quitó de acá para no duplicar el arranque.)
     };
-
-    function setTexto(sel, valor) {
-        var el = $(sel);
-        if (el) el.textContent = (valor === undefined || valor === null) ? '' : String(valor);
-    }
 
     // -------------------------------------------------------- arranque ----
     document.addEventListener('DOMContentLoaded', function () {

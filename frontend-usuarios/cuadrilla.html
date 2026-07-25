@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     Pantalla de CUADRILLA — stub "en construcción" (Fase 3.95).
+     Destino real del redirect por rol para cuadrilla + guard UX (el duro está en
+     la API). Mismo patrón que operario.html.
+============================================================================= -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuadrilla · Cathartes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <style>
+        .stub { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+        .stub__card { max-width: 460px; }
+        .stub h1 { font-family: var(--fuente-titulo); font-size: 30px; margin: 0 0 8px; }
+        .stub p { color: var(--texto-tenue); }
+        .stub__salir { margin-top: 20px; background: transparent; border: 1px solid var(--borde); color: var(--texto-tenue); border-radius: 10px; padding: 9px 16px; font: inherit; cursor: pointer; }
+        .stub__salir:hover { border-color: var(--rojo); color: var(--rojo); }
+    </style>
+</head>
+<body class="app">
+    <div class="stub">
+        <div class="stub__card">
+            <h1><span data-campo="nombre">Cuadrilla</span></h1>
+            <p>Las pantallas de cuadrilla están en construcción.</p>
+            <button type="button" class="stub__salir" id="salir">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/guardia.js"></script>
+    <script>
+        (function () {
+            var C = window.Cathartes;
+            C.Guardia.proteger().then(function (ctx) {
+                if (ctx.usuario.rol !== 'cuadrilla') { window.location.href = '403.html'; return; }
+                document.querySelector('[data-campo="nombre"]').textContent = ctx.usuario.nombre || 'Cuadrilla';
+            });
+            document.getElementById('salir').addEventListener('click', function () {
+                C.Api.post('/logout').then(function () { C.Auth.limpiar(); window.location.href = 'login.html'; });
+            });
+        })();
+    </script>
+</body>
+</html>

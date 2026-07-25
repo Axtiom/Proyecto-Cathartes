@@ -30,8 +30,8 @@
     var Guardia = window.Cathartes.Guardia = {
         proteger: function () {
             return new Promise(function (resolve) {
-                if (!Auth.autenticado()) { aLogin(); return; }
-
+                // No se puede saber desde JS si hay cookie (es HttpOnly): se pregunta
+                // a la API con /yo (la cookie viaja sola) y se maneja el 401.
                 Api.get('/yo').then(function (res) {
                     var d = res.data || {};
                     if (res.status === 200 && d.usuario) {
@@ -59,6 +59,14 @@
         iniciar: function (opts, render) {
             document.addEventListener('DOMContentLoaded', function () {
                 Guardia.proteger().then(function (ctx) {
+                    // Guardia de rol (solo UX; el límite duro está en la API, que
+                    // devuelve 403 a un endpoint ajeno). Las pantallas de este
+                    // frontend son de vecino salvo que digan otra cosa (opts.rol).
+                    var rolEsperado = (opts && opts.rol) || 'vecino';
+                    if (ctx.usuario.rol !== rolEsperado) {
+                        window.location.href = '403.html';
+                        return;
+                    }
                     // El shell se monta (async: clona el partial) ANTES de render.
                     window.Cathartes.Layout.montar(ctx, opts || {}).then(function () {
                         if (typeof render === 'function') render(ctx);

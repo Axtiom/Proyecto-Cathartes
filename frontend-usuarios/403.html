@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     403 — Permiso insuficiente (Fase 3.95).
+     No revela qué hay del otro lado: mensaje genérico + link al inicio del rol
+     que sí tiene el usuario (resuelto con GET /yo). Es la 403 del frontend
+     estático; el backoffice tiene la suya server-rendered.
+============================================================================= -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sin permiso · Cathartes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <style>
+        .e403 { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+        .e403__card { max-width: 460px; }
+        .e403__cod { font-family: var(--fuente-titulo); font-size: 64px; color: var(--rojo); margin: 0; line-height: 1; }
+        .e403 h1 { font-family: var(--fuente-titulo); font-size: 24px; margin: 8px 0 6px; }
+        .e403 p { color: var(--texto-tenue); }
+        .e403__ir { display: inline-block; margin-top: 18px; background: var(--verde); color: var(--verde-oscuro); border-radius: 10px; padding: 10px 18px; font-weight: 600; text-decoration: none; }
+    </style>
+</head>
+<body class="app">
+    <div class="e403">
+        <div class="e403__card">
+            <p class="e403__cod">403</p>
+            <h1>No tenés permiso para esta pantalla</h1>
+            <p>Tu rol no puede acceder a esta sección.</p>
+            <a class="e403__ir" id="ir-inicio" href="login.html">Ir a tu inicio</a>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        (function () {
+            var destinos = { vecino: 'inicio.html', operario: 'operario.html', cuadrilla: 'cuadrilla.html' };
+            window.Cathartes.Api.get('/yo').then(function (res) {
+                var d = res.data || {};
+                var link = document.getElementById('ir-inicio');
+                if (res.status === 200 && d.usuario && destinos[d.usuario.rol]) {
+                    link.setAttribute('href', destinos[d.usuario.rol]);
+                } else {
+                    link.setAttribute('href', 'login.html');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

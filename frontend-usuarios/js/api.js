@@ -9,43 +9,38 @@
  * ============================================================================
  * DECISIÓN DE SEGURIDAD (reutilizable para el entregable de Ciberseguridad)
  * ============================================================================
- * QUÉ SE ELIGIÓ
- *   El token de sesión se guarda en Web Storage del navegador y se envía en
- *   cada request como header `Authorization: Bearer <token>`.
- *     - "Recordarme" TILDADO   -> localStorage   (persiste ~90 días; el TTL real
- *                                  lo fija la firma del token del lado de la API).
- *     - "Recordarme" DESTILDADO -> sessionStorage (muere al cerrar el navegador).
- *   Esto preserva la especificación de auth ya definida (duración según
- *   "Recordarme", sin timeout por inactividad). Se descarta CSRF: al autenticar
- *   con Bearer en storage (no con cookies enviadas automáticamente por el
- *   navegador), no existe el vector de request cross-site montado sobre una
- *   cookie ambiental. CSRF deja de aplicar.
+ * QUÉ SE ELIGIÓ (Fase 3.95 — sesión unificada)
+ *   El token de sesión (mismo HMAC-SHA256 de siempre, typ='sesion') viaja en una
+ *   COOKIE `cathartes_sesion` con atributos:
+ *     - HttpOnly : el JavaScript NO la puede leer.
+ *     - SameSite=Lax : el navegador no la manda en requests cross-site (mitiga CSRF).
+ *     - Path=/ : una sola sesión para todas las apps del host (frontend, backoffice).
+ *     - Secure : según entorno (.env COOKIE_SECURE; true en prod HTTPS).
+ *     - Expiración según "Recordarme": tildado -> 90 días; sin tildar -> cookie de
+ *       sesión de navegador. Sin timeout por inactividad.
+ *   La setea la API de Usuarios al validar el 2FA. Se abandonó el guardado en
+ *   localStorage/sessionStorage con header Bearer.
  *
- * QUÉ RIESGO SE ACEPTA
- *   Un token en localStorage/sessionStorage es legible por cualquier JavaScript
- *   que corra en el origen. Por lo tanto, el riesgo principal pasa a ser XSS:
- *   un script inyectado podría leer el token y robar la sesión. (Una cookie
- *   HttpOnly no sería legible por JS, pero reintroduce CSRF y no encaja con el
- *   modelo Bearer/stateless de la API. Se optó por Bearer + cierre de XSS.)
+ * POR QUÉ EL CAMBIO
+ *   Un token en Web Storage es legible por cualquier JS del origen: ante un XSS,
+ *   se roba la sesión. HttpOnly cierra ese vector (el script no ve la cookie).
+ *   Además unifica el login: PHP (backoffice) no puede leer localStorage, pero sí
+ *   una cookie. El precio es que vuelve el riesgo de CSRF (el navegador manda la
+ *   cookie sola) — se cubre abajo.
  *
  * CÓMO SE MITIGA
- *   El riesgo se cierra en el CÓDIGO, no en la configuración:
- *   1. El DOM se puebla SIEMPRE con textContent / createElement, NUNCA con
- *      innerHTML a partir de datos de la API o del usuario. Sin sink de HTML,
- *      no hay inyección. (Ver acceso.js: todo dato externo va por textContent.)
- *   2. Las APIs deben enviar `Content-Security-Policy` para bloquear scripts
- *      inline/externos no autorizados como segunda barrera. Config base y punto
- *      de ajuste: se define del lado de la API (api-usuarios), en su front
- *      controller / .htaccess — PENDIENTE en este frontend estático, que no
- *      puede emitir cabeceras por sí mismo. Ver nota CORS/CSP más abajo.
- *   3. El kill-switch por `estado` de la API sigue vigente: revocar la cuenta
- *      invalida el token en el próximo request, aunque haya sido robado.
+ *   1. CSRF: SameSite=Lax en la cookie + token CSRF por sesión en los POST con
+ *      formulario (backoffice). Los POST de este frontend son fetch same-origin,
+ *      que Lax ya protege. Regla derivada: ningún endpoint muta estado por GET.
+ *   2. XSS: el DOM se puebla SIEMPRE con textContent, NUNCA con innerHTML a partir
+ *      de datos de la API/usuario. Segunda barrera: Content-Security-Policy del
+ *      lado API (pendiente de cablear en las cabeceras).
+ *   3. Kill-switch por `estado`: revocar la cuenta invalida la cookie en el
+ *      próximo request (401 + la API borra la cookie).
  *
- * NOTA CORS/CSP (dependencia del lado API, fuera del alcance de esta corrida):
- *   Al ser fetch cross-origin (frontend y API en orígenes distintos), la API
- *   de Usuarios debe responder con cabeceras CORS (Access-Control-Allow-Origin
- *   acotado al origen del frontend) y con Content-Security-Policy. Ambas se
- *   configuran en api-usuarios; acá quedan anotadas como pendiente.
+ * NOTA: frontend y APIs viven en el MISMO host (Apache :80, distintas rutas), así
+ *   que es todo same-origin: la cookie viaja sin CORS. En prod, mismo host o
+ *   subdominios con la cookie acotada al dominio.
  *
  * CONFIG — equivalente estático del .env:
  *   Sin PHP no hay .env. El único punto a tocar entre entornos (local ->
@@ -69,45 +64,16 @@
         apiRecoleccion: 'http://localhost/sigeru/api-recoleccion/public'
     };
 
-    var K_TOKEN    = 'cathartes.token';
-    var K_PREAUTH  = 'cathartes.preauth';
-    var K_RECORDAR = 'cathartes.recordar';
-    var K_FLASH    = 'cathartes.flash';
+    var K_FLASH = 'cathartes.flash';
 
     // -------------------------------------------------------------- Auth ----
+    // Fase 3.95: la sesión vive en una cookie HttpOnly firmada que setea la API al
+    // validar el 2FA. El JS NO la puede leer (esa es la gracia: resiste XSS mejor
+    // que localStorage). Ya no se guarda token ni preauth en storage. "Estar
+    // logueado" se comprueba pidiendo GET /yo (la cookie viaja sola). Acá solo
+    // quedan los mensajes flash (UX de una sola lectura), que no son secretos.
     var Auth = {
-        /** Guarda el token según "Recordarme": localStorage (persistente) o
-         *  sessionStorage (muere al cerrar el navegador). */
-        guardarToken: function (token, recordar) {
-            this.limpiar();
-            (recordar ? localStorage : sessionStorage).setItem(K_TOKEN, token);
-        },
-        token: function () {
-            return localStorage.getItem(K_TOKEN) || sessionStorage.getItem(K_TOKEN);
-        },
-        autenticado: function () {
-            return this.token() !== null;
-        },
-        limpiar: function () {
-            localStorage.removeItem(K_TOKEN);
-            sessionStorage.removeItem(K_TOKEN);
-            sessionStorage.removeItem(K_PREAUTH);
-            sessionStorage.removeItem(K_RECORDAR);
-        },
-
-        // Handoff efímero del 2FA entre /login y /verificar (tab-scoped).
-        guardarPreauth: function (preauth, recordar) {
-            sessionStorage.setItem(K_PREAUTH, preauth);
-            sessionStorage.setItem(K_RECORDAR, recordar ? '1' : '0');
-        },
-        preauth: function () { return sessionStorage.getItem(K_PREAUTH); },
-        recordarPreauth: function () { return sessionStorage.getItem(K_RECORDAR) === '1'; },
-        borrarPreauth: function () {
-            sessionStorage.removeItem(K_PREAUTH);
-            sessionStorage.removeItem(K_RECORDAR);
-        },
-
-        // Mensajes flash de una sola lectura (p. ej. "Tu sesión fue cerrada.").
+        limpiar: function () { sessionStorage.removeItem(K_FLASH); },
         flash: function (msg) { sessionStorage.setItem(K_FLASH, msg); },
         tomarFlash: function () {
             var m = sessionStorage.getItem(K_FLASH);
@@ -119,16 +85,15 @@
     // --------------------------------------------------------------- Api ----
     /** Hace el request contra `base`. Devuelve una promesa de { status, data }
      *  (data = JSON parseado o null). Nunca rechaza: ante fallo de red devuelve
-     *  status 0. El token (si hay) viaja como Bearer a cualquiera de las APIs:
-     *  todas comparten el mismo secreto de firma. */
+     *  status 0. La cookie de sesión viaja sola (credentials same-origin) a
+     *  cualquiera de las APIs: todas comparten el mismo secreto de firma. */
     function request(base, metodo, ruta, datos) {
         var url = String(base).replace(/\/+$/, '') + '/' + String(ruta).replace(/^\/+/, '');
         var headers = { 'Accept': 'application/json' };
 
-        var token = Auth.token();
-        if (token) headers['Authorization'] = 'Bearer ' + token;
-
-        var opts = { method: metodo, headers: headers };
+        // La sesión viaja en la cookie HttpOnly: credentials 'same-origin' hace que
+        // el navegador la mande sola. Ya no se arma header Authorization: Bearer.
+        var opts = { method: metodo, headers: headers, credentials: 'same-origin' };
         if (datos !== undefined && datos !== null) {
             if (typeof FormData !== 'undefined' && datos instanceof FormData) {
                 // Multipart (subida de archivos): NO fijar Content-Type a mano —

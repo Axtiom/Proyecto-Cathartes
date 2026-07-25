@@ -7,11 +7,12 @@
     'use strict';
     var C = window.Cathartes, G = C.Gestion, Fmt = C.Fmt;
 
-    // La foto está protegida (Bearer): <img src> no puede mandar el header, así
-    // que se baja por fetch con el token y se pinta como object URL.
+    // La foto está protegida: se baja por fetch (la cookie de sesión viaja sola con
+    // credentials same-origin) y se pinta como object URL, porque <img src> a un
+    // endpoint protegido igual serviría, pero así se maneja el caso "sin foto".
     function cargarFoto(id, img, sinfoto) {
         var base = C.config.apiGestion.replace(/\/+$/, '');
-        fetch(base + '/vecino/incidencia-foto?id=' + id, { headers: { 'Authorization': 'Bearer ' + C.Auth.token() } })
+        fetch(base + '/vecino/incidencia-foto?id=' + id, { credentials: 'same-origin' })
             .then(function (r) { if (!r.ok) throw new Error('sin foto'); return r.blob(); })
             .then(function (b) { img.src = URL.createObjectURL(b); img.hidden = false; })
             .catch(function () { sinfoto.hidden = false; });
