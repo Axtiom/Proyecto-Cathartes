@@ -13,6 +13,7 @@ require_once BASE_PATH . '/app/Models/Usuario.php';
 class AccesoController extends Controller
 {
     private const MIN_PASS = 8;
+    private const PREAUTH_COOKIE = 'cathartes_preauth';
 
     // POST /registro
     public function registro(): void
@@ -77,6 +78,12 @@ class AccesoController extends Controller
 
         $id  = (int) $u['ID'];
         $rol = Auth::rolDe($id);
+        if ($rol === null) {
+            // Sin subtipo = estado inconsistente: no se lo deja pasar (se registra).
+            error_log("[auth] usuario {$id} sin tabla de subtipo: acceso denegado en login");
+            $this->error('Tu cuenta no tiene un rol asignado. Contactá al administrador.', 403);
+            return;
+        }
 
         $codigo = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         Mailer::enviar(
@@ -85,12 +92,13 @@ class AccesoController extends Controller
             "Tu código es: {$codigo}\nVence en 5 minutos. Si no fuiste vos, ignorá este correo."
         );
 
+        // El preauth (2FA, ~5 min) viaja en cookie HttpOnly: el JS ni lo toca.
         $preauth = Token::emitir2fa($id, $rol, $recordar, $codigo);
+        self::setCookie(self::PREAUTH_COOKIE, $preauth, time() + 300);
 
         $resp = [
             'ok'      => true,
             'need2fa' => true,
-            'preauth' => $preauth,
             'destino' => self::enmascarar((string) $u['email']),
         ];
         // solo en dev (stub): devolver el código para poder probar sin mail real
@@ -101,12 +109,13 @@ class AccesoController extends Controller
         $this->json($resp);
     }
 
-    // POST /verificar
+    // POST /verificar — valida el código 2FA, SETEA la cookie de sesión y devuelve
+    // el rol + el destino (URL) al que el frontend debe redirigir. El preauth se
+    // lee de la cookie HttpOnly (no del body): el JS no lo maneja.
     public function verificar(): void
     {
-        $in = $this->entrada();
-        $preauth = (string) ($in['preauth'] ?? '');
-        $codigo  = (string) ($in['codigo'] ?? '');
+        $preauth = (string) ($_COOKIE[self::PREAUTH_COOKIE] ?? '');
+        $codigo  = (string) ($this->entrada()['codigo'] ?? '');
 
         $p = Token::validar($preauth, '2fa');
         if ($p === null) {
@@ -119,19 +128,30 @@ class AccesoController extends Controller
         }
 
         // re-chequear estado fresco (pudo desactivarse entre login y verificación)
-        $u = Usuario::porId((int) $p['id']);
+        $id = (int) $p['id'];
+        $u  = Usuario::porId($id);
         if ($u === null || $u['estado'] !== 'activo') {
             $this->error('Tu cuenta todavía no fue aprobada.', 403);
             return;
         }
+        // rol autoritativo al momento de verificar (el subtipo pudo cambiar).
+        $rol = Auth::rolDe($id);
+        if ($rol === null) {
+            error_log("[auth] usuario {$id} sin tabla de subtipo: acceso denegado en verificar");
+            $this->error('Tu cuenta no tiene un rol asignado. Contactá al administrador.', 403);
+            return;
+        }
 
         // TODO(futuro): limitar intentos de código (rate limit). No implementado aún.
-        $token = Token::emitirSesion((int) $p['id'], (string) $p['rol']);
+        $recordar = (bool) ($p['recordar'] ?? false);
+        $ttl = $recordar ? time() + (int) Config::get('token.ttl', 7776000) : 0; // 0 = cookie de sesión
+        self::setCookie(Auth::COOKIE, Token::emitirSesion($id, $rol), $ttl);
+        self::borrarCookie(self::PREAUTH_COOKIE);
 
         $this->json([
-            'ok'       => true,
-            'token'    => $token,
-            'recordar' => (bool) ($p['recordar'] ?? false),
+            'ok'      => true,
+            'rol'     => $rol,
+            'destino' => self::destino($rol),
         ]);
     }
 
@@ -186,9 +206,13 @@ class AccesoController extends Controller
         $this->json(['ok' => true, 'mensaje' => 'Contraseña actualizada.']);
     }
 
-    // POST /logout — los tokens son stateless, no hay nada que revocar acá.
+    // POST /logout — borra la cookie de sesión (y la de preauth por las dudas).
+    // Como la cookie es del host con Path=/, cerrar sesión en una app cierra en
+    // todas (backoffice y frontend comparten la misma cookie).
     public function logout(): void
     {
+        Auth::borrarCookie();
+        self::borrarCookie(self::PREAUTH_COOKIE);
         $this->json(['ok' => true]);
     }
 
@@ -226,6 +250,41 @@ class AccesoController extends Controller
             $resp['campo'] = $campo;
         }
         $this->json($resp, $codigo);
+    }
+
+    // --- Cookies de sesión (Fase 3.95) --------------------------------------
+    /** Setea una cookie HttpOnly, SameSite=Lax, Path=/, Secure según .env. */
+    private static function setCookie(string $nombre, string $valor, int $expires): void
+    {
+        setcookie($nombre, $valor, [
+            'expires'  => $expires,   // 0 = cookie de sesión de navegador
+            'path'     => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+            'secure'   => (bool) Config::get('cookie.secure', false),
+        ]);
+    }
+
+    private static function borrarCookie(string $nombre): void
+    {
+        setcookie($nombre, '', [
+            'expires'  => time() - 3600,
+            'path'     => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
+    }
+
+    /** URL de destino post-2FA según el rol (config-driven, nada hardcodeado). */
+    private static function destino(string $rol): string
+    {
+        $front = rtrim((string) Config::get('app.frontend_url', ''), '/');
+        switch ($rol) {
+            case 'administrador': return (string) Config::get('app.backoffice_url', '');
+            case 'operario':      return $front . '/operario.html';
+            case 'cuadrilla':     return $front . '/cuadrilla.html';
+            default:              return $front . '/inicio.html';   // vecino
+        }
     }
 
     /** juan.perez@correo.com → j***@correo.com */

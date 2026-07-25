@@ -10,8 +10,17 @@ declare(strict_types=1);
 return [
     'app' => [
         'nombre'       => 'API Usuarios · SiGeRU',
-        // Base del Frontend de Usuarios, para armar el enlace de recuperación.
-        'frontend_url' => Env::get('FRONTEND_URL', 'http://127.0.0.1:8080'),
+        // Base del Frontend de Usuarios, para el enlace de recuperación y el
+        // destino post-2FA de vecino/operario/cuadrilla.
+        'frontend_url'  => Env::get('FRONTEND_URL', 'http://localhost/sigeru/frontend-usuarios'),
+        // Base del Backoffice, destino post-2FA del administrador.
+        'backoffice_url' => Env::get('BACKOFFICE_URL', 'http://localhost/sigeru/backoffice/public/usuarios'),
+    ],
+
+    // Cookie de sesión (Fase 3.95). Secure según entorno: en dev sobre HTTP va en
+    // false; en producción (HTTPS) el .env lo pone en true. Nada hardcodeado.
+    'cookie' => [
+        'secure' => filter_var(Env::get('COOKIE_SECURE', 'false'), FILTER_VALIDATE_BOOLEAN),
     ],
 
     'db' => [
