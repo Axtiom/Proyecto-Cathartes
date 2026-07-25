@@ -46,7 +46,10 @@ INSERT INTO usuario (ID, nombre, email, `contrasena`, estado) VALUES
 (1, 'Galvan de Saero', 'admin@cathartes.uy',     '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo'),
 (2, 'Amelia Garfan',   'operario@cathartes.uy',  '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo'),
 (3, 'Cuadrilla Alfa',  'cuadrilla@cathartes.uy', '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo'),
-(4, 'Juan Pérez',      'vecino@correo.com',      '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo');
+(4, 'Juan Pérez',      'vecino@correo.com',      '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo'),
+-- Segundo administrador con jefe='no' (Fase 4.1): necesario para demostrar RN4
+-- (un admin común NO puede crear/dar de baja administradores).
+(5, 'Bruno Contralor', 'admin2@cathartes.uy',    '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo');
 
 -- ---------------------------------------------------------------------
 -- 4) Teléfonos (uno por usuario, formato uruguayo)
@@ -55,12 +58,14 @@ INSERT INTO usuario_telefono (id_tel, telefono, ID_usuario) VALUES
 (1, '091 234 567', 1),
 (2, '092 345 678', 2),
 (3, '093 456 789', 3),
-(4, '094 567 890', 4);
+(4, '094 567 890', 4),
+(5, '095 111 222', 5);
 
 -- ---------------------------------------------------------------------
 -- 5) Subtipos de usuario (el rol se deduce de acá, no es columna)
 -- ---------------------------------------------------------------------
 INSERT INTO administrador (ID_usuario, jefe) VALUES (1, 'si');
+INSERT INTO administrador (ID_usuario, jefe) VALUES (5, 'no');   -- admin común (RN4)
 INSERT INTO operario (ID_usuario, ID_instalacion) VALUES (2, 1);
 -- usuario.nombre ES el nombre del equipo (la cuadrilla es una cuenta compartida).
 INSERT INTO cuadrilla (ID_usuario, ID_camion, estado) VALUES (3, 1, 'en servicio');
