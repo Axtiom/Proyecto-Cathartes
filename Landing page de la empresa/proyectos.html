@@ -6,7 +6,6 @@
   <meta name="description" content="Axtiom — Proyectos: SiGeRU / Cathartes, sistema de gestión de residuos urbanos." />
   <title>Axtiom · Proyectos</title>
   <link rel="stylesheet" href="styles.css" />
-  --- css personalizado ---
   <style>
     [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
     [data-reveal].revealed { opacity: 1; transform: translateY(0); }
@@ -120,50 +119,62 @@
           <div class="project-card__body">
 
             <p class="project-card__desc">
-              <!-- [TODO: Reemplazar/ampliar con la descripción definitiva de SiGeRU] -->
-              SiGeRU — con nombre en clave <strong>Cathartes</strong> — es un sistema de
-              gestión de incidentes de residuos urbanos diseñado para modernizar la manera
-              en que las ciudades manejan los reportes y la resolución de residuos. Conecta
-              a tres actores en una sola plataforma: <em>ciudadanos</em> que reportan
-              incidentes, <em>administradores</em> que los validan y asignan, y
-              <em>cuadrillas de campo</em> que los resuelven — todo rastreado en tiempo
-              real desde el reporte hasta el cierre.
+              SiGeRU — desarrollado bajo la marca de producto <strong>Cathartes</strong> —
+              es una plataforma web integral para la gestión de residuos urbanos en
+              Montevideo. Aborda contenedores que se desbordan sin un canal ágil para
+              reportarlo, recorridos de recolección sin registro trazable, y la distancia
+              entre el vecino que detecta el problema y el organismo que puede resolverlo.
             </p>
 
             <p class="project-card__desc">
-              <!-- [TODO: Contexto adicional de SiGeRU] -->
-              Una capa de gamificación recompensa a los ciudadanos más activos y mantiene
-              el nivel de participación alto, convirtiendo la gestión de residuos de un
-              servicio pasivo en un esfuerzo comunitario. El sistema prioriza la claridad,
-              la velocidad y la rendición de cuentas en cada paso.
+              La plataforma articula a cuatro roles del ciclo de gestión: el
+              <em>Vecino</em>, que reporta incidencias con fotografía y hace
+              seguimiento de ellas; el <em>Líder de cuadrilla</em>, responsable de
+              su equipo, que recibe la ruta y el vehículo asignados y marca la
+              incidencia como resuelta una vez atendida; el <em>Operario</em>, que
+              trabaja en una instalación —vertedero o centro de acopio— e informa
+              su estado y capacidad; y el <em>Administrador</em>, que gestiona y
+              valida las incidencias, asigna cuadrillas y rutas, y tiene visibilidad
+              general del sistema. Dentro de este último rol se distingue al
+              <em>Administrador Jefe</em>, quien comparte las mismas funciones y
+              además puede asignar y destituir a otros administradores.
+            </p>
+
+            <p class="project-card__desc">
+              Para sostener la participación ciudadana sin incurrir en costos, el sistema
+              incorpora un esquema de incentivos: el vecino acumula puntos cuando una
+              incidencia que reportó es validada, y esos puntos se canjean por
+              reconocimientos de valor simbólico y costo nulo o mínimo, como distintivos
+              de perfil, aparición en un mural público de colaboradores o la donación
+              simbólica de un árbol nativo.
             </p>
 
             <!-- Lista de características -->
             <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">Características principales</h3>
             <div class="feature-list">
               <div class="feature-item">
-                <span><strong>Reportes ciudadanos</strong> — interfaz optimizada para móviles que permite
-                enviar incidentes de residuos con ubicación, foto y descripción.</span>
+                <span><strong>Reportes del vecino</strong> — el vecino reporta incidencias con
+                fotografía, hace seguimiento de ellas y participa del sistema de gamificación.</span>
               </div>
               <div class="feature-item">
-                <span><strong>Validación administrativa</strong> — panel para que los administradores
-                municipales revisen, prioricen y aprueben los reportes recibidos.</span>
+                <span><strong>Gestión de cuadrillas</strong> — el líder de cuadrilla recibe la ruta y
+                el vehículo asignados, ejecuta la tarea en territorio y marca la incidencia como resuelta.</span>
               </div>
               <div class="feature-item">
-                <span><strong>Asignación de cuadrillas</strong> — herramientas automáticas y manuales
-                para despachar la cuadrilla adecuada a cada incidente validado.</span>
+                <span><strong>Estado de instalaciones</strong> — el operario informa el estado y la
+                capacidad del vertedero o centro de acopio donde trabaja.</span>
               </div>
               <div class="feature-item">
-                <span><strong>Seguimiento de resoluciones</strong> — visibilidad completa del ciclo de
-                vida, desde el reporte inicial hasta la resolución y el cierre.</span>
+                <span><strong>Gestión y validación</strong> — el administrador gestiona y valida las
+                incidencias, asigna cuadrillas y rutas, con visibilidad general del sistema.</span>
               </div>
               <div class="feature-item">
-                <span><strong>Capa de gamificación</strong> — puntos, insignias y tablas de clasificación
-                que incentivan a los ciudadanos a seguir reportando y participando.</span>
+                <span><strong>Administrador Jefe</strong> — comparte las funciones del administrador
+                y además puede asignar y destituir a otros administradores.</span>
               </div>
               <div class="feature-item">
-                <!-- [TODO: Características adicionales] -->
-                <span><strong>[TODO: Característica 6]</strong> — [marcador de posición para una característica adicional de SiGeRU].</span>
+                <span><strong>Control de versiones</strong> — desarrollo versionado con Git y
+                alojado en un repositorio de GitHub, con trazabilidad técnica desde el día uno.</span>
               </div>
             </div>
 
@@ -173,33 +184,38 @@
             <div class="module-grid">
               <div class="module-card">
                 <div class="module-card__icon">📱</div>
-                <p class="module-card__title">App Ciudadana</p>
+                <p class="module-card__title">Vecino</p>
                 <p class="module-card__text">
-                  Reportar incidentes, hacer seguimiento de su estado y ganar recompensas de gamificación.
-                </p>
-              </div>
-
-              <div class="module-card">
-                <div class="module-card__icon">🖥️</div>
-                <p class="module-card__title">Panel Administrativo</p>
-                <p class="module-card__text">
-                  Validar reportes, gestionar cuadrillas y monitorear métricas de resolución.
+                  Reporta incidencias con fotografía, hace seguimiento de ellas y
+                  participa del sistema de gamificación.
                 </p>
               </div>
 
               <div class="module-card">
                 <div class="module-card__icon">🚛</div>
-                <p class="module-card__title">Vista de Cuadrillas</p>
+                <p class="module-card__title">Líder de cuadrilla</p>
                 <p class="module-card__text">
-                  Recibir asignaciones, actualizar el estado en campo y cerrar incidentes.
+                  Recibe la ruta y el vehículo asignados, ejecuta la tarea en
+                  territorio y marca la incidencia como resuelta.
                 </p>
               </div>
 
               <div class="module-card">
-                <div class="module-card__icon">🏆</div>
-                <p class="module-card__title">Motor de Gamificación</p>
+                <div class="module-card__icon">🏭</div>
+                <p class="module-card__title">Operario</p>
                 <p class="module-card__text">
-                  Puntos, niveles y logros que recompensan la participación cívica.
+                  Trabaja en un vertedero o centro de acopio e informa su estado
+                  y su capacidad.
+                </p>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card__icon">🖥️</div>
+                <p class="module-card__title">Administrador</p>
+                <p class="module-card__text">
+                  Gestiona y valida incidencias, asigna cuadrillas y rutas, con
+                  visibilidad general del sistema. El Administrador Jefe además
+                  asigna y destituye administradores.
                 </p>
               </div>
             </div>
@@ -209,14 +225,26 @@
               <h3 style="font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:0.75rem;">
                 Stack tecnológico
               </h3>
-              <!-- [TODO: Reemplazar con el stack real utilizado en SiGeRU] -->
               <div>
-                <span class="tech-tag">[TODO: Backend]</span>
-                <span class="tech-tag">[TODO: Frontend]</span>
-                <span class="tech-tag">[TODO: Base de datos]</span>
-                <span class="tech-tag">[TODO: Autenticación]</span>
-                <span class="tech-tag">[TODO: Mapas / SIG]</span>
-                <span class="tech-tag">[TODO: Despliegue]</span>
+                <span class="tech-tag">HTML5</span>
+                <span class="tech-tag">CSS</span>
+                <span class="tech-tag">JavaScript</span>
+                <span class="tech-tag">PHP 8</span>
+                <span class="tech-tag">MySQL 8</span>
+                <span class="tech-tag">Docker</span>
+                <span class="tech-tag">Linux</span>
+                <span class="tech-tag">Git / GitHub</span>
+              </div>
+            </div>
+
+            <!-- Dominios del proyecto -->
+            <div style="margin-top:1.5rem;">
+              <h3 style="font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:0.75rem;">
+                Dominios (proyecto académico)
+              </h3>
+              <div>
+                <span class="tech-tag">axtiom.com.uy — sitio institucional</span>
+                <span class="tech-tag">cathartes.uy — producto SiGeRU</span>
               </div>
             </div>
 
@@ -249,11 +277,11 @@
         <div class="coming-soon" data-reveal>
           <div class="coming-soon__icon">🔭</div>
           <p style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">
-            [TODO: Nombre del próximo proyecto]
+            Próximo proyecto por definir
           </p>
           <p class="coming-soon__text">
-            <!-- [TODO: Breve descripción del próximo proyecto] -->
-            Los detalles sobre futuros proyectos de Axtiom aparecerán aquí.
+            Una vez consolidado SiGeRU, Axtiom evaluará nuevos proyectos de
+            software para organizaciones, empresas y clientes particulares.
             Mantente atento.
           </p>
         </div>
@@ -266,7 +294,6 @@
         <div class="tag">Colabora</div>
         <h2 class="section-title">¿Te interesa nuestro trabajo?</h2>
         <p class="section-subtitle" style="margin-inline:auto;">
-          <!-- [TODO: Texto del llamado a la acción] -->
           Si quieres saber más sobre SiGeRU, hablar de una posible colaboración
           o simplemente conversar sobre tecnología cívica — escríbenos.
         </p>
