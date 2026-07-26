@@ -9,6 +9,9 @@ declare(strict_types=1);
 
 // Acceso (login unificado en el frontend; acá solo entrada y logout)
 $router->get('/',        'AccesoController', 'index');
+
+// Pantalla 1 — Dashboard (solo lectura: agrega sobre las otras nueve)
+$router->get('/dashboard', 'PanelController', 'index');
 $router->post('/logout', 'AccesoController', 'logout');
 
 // Salud (sin auth)
@@ -40,3 +43,32 @@ $router->get('/camiones/editar',     'CamionController', 'editar');
 $router->post('/camiones/crear',      'CamionController', 'crear');
 $router->post('/camiones/actualizar', 'CamionController', 'actualizar');
 $router->post('/camiones/baja',       'CamionController', 'baja');
+
+// Pantalla 6 — Instalaciones (alta y edición; sin baja, ver el Model)
+$router->get('/instalaciones',            'InstalacionController', 'index');
+$router->get('/instalaciones/editar',     'InstalacionController', 'editar');
+$router->post('/instalaciones/crear',      'InstalacionController', 'crear');
+$router->post('/instalaciones/actualizar', 'InstalacionController', 'actualizar');
+
+// Pantalla 7 — Rutas (alta, edición y asignación de cuadrilla vía `toma`)
+$router->get('/rutas',            'RutaController', 'index');
+$router->get('/rutas/editar',     'RutaController', 'editar');
+$router->post('/rutas/crear',      'RutaController', 'crear');
+$router->post('/rutas/actualizar', 'RutaController', 'actualizar');
+$router->post('/rutas/asignar',    'RutaController', 'asignar');
+$router->post('/rutas/contenedores', 'RutaController', 'contenedores');
+
+// Pantalla 8 — Cuadrillas (camión + estado operativo; el alta es de USUARIO)
+$router->get('/cuadrillas',            'CuadrillaController', 'index');
+$router->get('/cuadrillas/editar',     'CuadrillaController', 'editar');
+$router->post('/cuadrillas/actualizar', 'CuadrillaController', 'actualizar');
+
+// Pantalla 9 — Recompensas (catálogo + métricas de gamificación)
+$router->get('/recompensas',            'RecompensaController', 'index');
+$router->get('/recompensas/editar',     'RecompensaController', 'editar');
+$router->post('/recompensas/crear',      'RecompensaController', 'crear');
+$router->post('/recompensas/actualizar', 'RecompensaController', 'actualizar');
+$router->post('/recompensas/eliminar',   'RecompensaController', 'eliminar');
+
+// Pantalla 10 — Informes (solo lectura; PDF por el diálogo de impresión)
+$router->get('/informes', 'InformeController', 'index');

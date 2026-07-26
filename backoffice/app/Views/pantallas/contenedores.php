@@ -38,7 +38,10 @@ require BASE_PATH . '/app/Views/partials/head.php';
                         </select>
                     </label>
                 </div>
-                <label class="bo-campo"><span>Ruta</span>
+                <!-- La ruta se pide SOLO en el alta: `contenedor.ID_ruta` es NOT NULL,
+                     un contenedor no puede nacer sin ruta. Después el recorrido se
+                     administra desde la pantalla de la ruta. -->
+                <label class="bo-campo"><span>Ruta inicial</span>
                     <select name="id_ruta" required>
                         <option value="">Elegí una ruta…</option>
                         <?php foreach ($rutas as $r): ?>
@@ -46,6 +49,7 @@ require BASE_PATH . '/app/Views/partials/head.php';
                         <?php endforeach; ?>
                     </select>
                 </label>
+                <p class="bo-alta__nota">Después podés cambiar el recorrido desde <strong>Rutas</strong>: ahí se define por qué contenedores pasa cada una.</p>
                 <div class="bo-alta__fila">
                     <label class="bo-campo"><span>Latitud <em>(opcional)</em></span><input type="text" name="latitud" placeholder="-34.9075"></label>
                     <label class="bo-campo"><span>Longitud <em>(opcional)</em></span><input type="text" name="longitud" placeholder="-56.1385"></label>
@@ -59,7 +63,7 @@ require BASE_PATH . '/app/Views/partials/head.php';
     </details>
 </div>
 
-<?php if ($flash): ?><div class="bo-aviso bo-aviso--ok"><?= e($flash) ?></div><?php endif; ?>
+<?php if ($flash): ?><div class="bo-aviso bo-aviso--<?= e($flash['tipo']) ?>"><?= e($flash['texto']) ?></div><?php endif; ?>
 
 <form class="bo-filtros" method="get" action="<?= e(ruta('contenedores')) ?>">
     <select name="tipo">

@@ -46,7 +46,7 @@ require BASE_PATH . '/app/Views/partials/head.php';
     </details>
 </div>
 
-<?php if ($flash): ?><div class="bo-aviso bo-aviso--ok"><?= e($flash) ?></div><?php endif; ?>
+<?php if ($flash): ?><div class="bo-aviso bo-aviso--<?= e($flash['tipo']) ?>"><?= e($flash['texto']) ?></div><?php endif; ?>
 
 <form class="bo-filtros" method="get" action="<?= e(ruta('camiones')) ?>">
     <input type="search" name="q" value="<?= e($f['q']) ?>" placeholder="Buscar por matrícula o modelo…">

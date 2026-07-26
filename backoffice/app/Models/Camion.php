@@ -99,7 +99,9 @@ class Camion
         $mat = trim((string) ($d['matricula'] ?? ''));
         if ($mat === '') return 'La matrícula es obligatoria.';
         if (trim((string) ($d['modelo'] ?? '')) === '') return 'El modelo es obligatorio.';
-        if ((int) ($d['capacidad'] ?? 0) <= 0) return 'La capacidad debe ser un número mayor a 0.';
+        if (!entero_en_rango($d['capacidad'] ?? '', 1, MYSQL_INT_MAX)) {
+            return 'La capacidad debe ser un número entero entre 1 y ' . number_format(MYSQL_INT_MAX, 0, ',', '.') . '.';
+        }
         if (!in_array($d['estado'] ?? '', self::ESTADOS, true)) return 'Estado inválido.';
         // matrícula UNIQUE (excluye el propio registro en edición)
         $st = Database::conexion()->prepare('SELECT 1 FROM camion WHERE matricula = ? AND ID <> ?');

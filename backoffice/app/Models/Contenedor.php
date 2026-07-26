@@ -56,6 +56,14 @@ class Contenedor
         )->fetchAll();
     }
 
+    /** Una ruta puntual, para mostrar a qué recorrido pertenece el contenedor. */
+    public static function rutaDe(int $idRuta): array
+    {
+        $st = Database::conexion()->prepare('SELECT ID, nombre, zona FROM ruta WHERE ID = ?');
+        $st->execute([$idRuta]);
+        return $st->fetch() ?: ['ID' => 0, 'nombre' => '—', 'zona' => '—'];
+    }
+
     /** @return array{ok:bool,error?:string,id?:int} */
     public static function crear(array $d): array
     {
@@ -72,18 +80,25 @@ class Contenedor
         return ['ok' => true, 'id' => (int) Database::conexion()->lastInsertId()];
     }
 
-    /** @return array{ok:bool,error?:string} */
+    /**
+     * Edición de los datos del contenedor. NO toca `ID_ruta`: por qué contenedores
+     * pasa una ruta lo decide la ruta (Pantalla 7 → Ruta::asignarContenedores).
+     * Mantener la reasignación en un solo lugar evita que dos pantallas peleen por
+     * el mismo campo.
+     *
+     * @return array{ok:bool,error?:string}
+     */
     public static function actualizar(int $id, array $d): array
     {
         if (self::porId($id) === null) return ['ok' => false, 'error' => 'Contenedor inexistente.'];
-        $v = self::validar($d);
+        $v = self::validar($d, false);
         if ($v !== null) return ['ok' => false, 'error' => $v];
         $st = Database::conexion()->prepare(
-            'UPDATE contenedor SET ubicacion = ?, latitud = ?, longitud = ?, tipo = ?, estado = ?, ID_ruta = ? WHERE ID = ?'
+            'UPDATE contenedor SET ubicacion = ?, latitud = ?, longitud = ?, tipo = ?, estado = ? WHERE ID = ?'
         );
         $st->execute([
             trim($d['ubicacion']), self::coord($d['latitud'] ?? ''), self::coord($d['longitud'] ?? ''),
-            $d['tipo'], $d['estado'], (int) $d['id_ruta'], $id,
+            $d['tipo'], $d['estado'], $id,
         ]);
         return ['ok' => true];
     }
@@ -99,11 +114,20 @@ class Contenedor
         return ['ok' => true];
     }
 
-    private static function validar(array $d): ?string
+    /**
+     * @param bool $conRuta true en el alta (ID_ruta es NOT NULL, hay que elegirla),
+     *                      false en la edición (la ruta se administra desde Rutas).
+     */
+    private static function validar(array $d, bool $conRuta = true): ?string
     {
         if (trim((string) ($d['ubicacion'] ?? '')) === '') return 'La ubicación es obligatoria.';
         if (!in_array($d['tipo'] ?? '', self::TIPOS, true)) return 'Tipo de residuo inválido.';
         if (!in_array($d['estado'] ?? '', self::ESTADOS, true)) return 'Estado inválido.';
+        // Rango geográfico: además de ser el correcto, evita desbordar DECIMAL(9,6).
+        if (!coordenada_valida($d['latitud'] ?? '', 90))   return 'La latitud tiene que ser un número entre -90 y 90, o quedar vacía.';
+        if (!coordenada_valida($d['longitud'] ?? '', 180)) return 'La longitud tiene que ser un número entre -180 y 180, o quedar vacía.';
+        if (!$conRuta) return null;
+
         if ((int) ($d['id_ruta'] ?? 0) <= 0) return 'La ruta es obligatoria.';
         $st = Database::conexion()->prepare('SELECT 1 FROM ruta WHERE ID = ?');
         $st->execute([(int) $d['id_ruta']]);

@@ -32,7 +32,7 @@ class CamionController extends Controller
         $admin = Auth::exigir();
         $c = Camion::porId((int) ($_GET['id'] ?? 0));
         if ($c === null) {
-            $this->flash('Camión inexistente.');
+            $this->flash('Camión inexistente.', 'error');
             $this->redirigir('camiones');
         }
         $this->vista('camion', [
@@ -50,7 +50,8 @@ class CamionController extends Controller
         Auth::exigir();
         Auth::verificarCsrf();
         $res = Camion::crear($this->campos());
-        $this->flash($res['ok'] ? ('Camión creado (#' . $res['id'] . ').') : ('No se pudo crear: ' . $res['error']));
+        $res['ok'] ? $this->flash('Camión creado (#' . $res['id'] . ').')
+                   : $this->flash('No se pudo crear: ' . $res['error'], 'error');
         $this->redirigir('camiones');
     }
 
@@ -60,7 +61,8 @@ class CamionController extends Controller
         Auth::verificarCsrf();
         $id  = (int) ($_POST['id'] ?? 0);
         $res = Camion::actualizar($id, $this->campos());
-        $this->flash($res['ok'] ? ('Camión #' . $id . ' actualizado.') : ('No se pudo guardar: ' . $res['error']));
+        $res['ok'] ? $this->flash('Camión #' . $id . ' actualizado.')
+                   : $this->flash('No se pudo guardar: ' . $res['error'], 'error');
         $this->redirigir('camiones/editar?id=' . $id);
     }
 
@@ -70,7 +72,8 @@ class CamionController extends Controller
         Auth::verificarCsrf();
         $id  = (int) ($_POST['id'] ?? 0);
         $res = Camion::baja($id, (string) ($_POST['motivo'] ?? ''));
-        $this->flash($res['ok'] ? ('Camión #' . $id . ' dado de baja.') : ('No se pudo dar de baja: ' . $res['error']));
+        $res['ok'] ? $this->flash('Camión #' . $id . ' dado de baja.')
+                   : $this->flash('No se pudo dar de baja: ' . $res['error'], 'error');
         $this->redirigir('camiones/editar?id=' . $id);
     }
 
@@ -83,7 +86,4 @@ class CamionController extends Controller
             'estado'    => $_POST['estado'] ?? '',
         ];
     }
-
-    private function flash(string $m): void { $_SESSION['flash'] = $m; }
-    private function tomarFlash(): ?string { $m = $_SESSION['flash'] ?? null; unset($_SESSION['flash']); return $m; }
 }

@@ -71,12 +71,15 @@ class UsuarioController extends Controller
 
         // Dar de baja a un ADMINISTRADOR: RN4 (solo jefe) + protección del último jefe.
         if (Usuario::rolDe($id) === 'administrador') {
+            // Límite duro de RN4. La pantalla ya muestra el botón inerte con el
+            // aviso flotante; a esto solo se llega forzando el POST.
             if (!Usuario::esJefe((int) $admin['id'])) {
                 http_response_code(403);
+                header('Content-Type: text/plain; charset=utf-8');
                 exit('Permiso insuficiente: solo un administrador jefe puede dar de baja administradores.');
             }
             if (Usuario::esUltimoJefe($id)) {
-                $this->flash('No se puede dar de baja al último administrador jefe activo: dejaría el sistema sin quien gestione administradores.');
+                $this->flash('No se puede dar de baja al último administrador jefe activo: dejaría el sistema sin quien gestione administradores.', 'error');
                 $this->volver();
                 return;
             }
@@ -101,6 +104,7 @@ class UsuarioController extends Controller
         // la opción es UX; la protección real es este 403 (aunque fuercen el POST).
         if ($rol === 'administrador' && !Usuario::esJefe((int) $admin['id'])) {
             http_response_code(403);
+            header('Content-Type: text/plain; charset=utf-8');
             exit('Permiso insuficiente: solo un administrador jefe puede crear administradores.');
         }
 
@@ -116,29 +120,17 @@ class UsuarioController extends Controller
             'jefe'           => $_POST['jefe'] ?? 'no',
         ], (int) $admin['id']);
 
-        $this->flash($res['ok']
-            ? ('Usuario creado (#' . $res['id'] . ' · ' . $res['rol'] . ').')
-            : ('No se pudo crear: ' . $res['error']));
+        $res['ok']
+            ? $this->flash('Usuario creado (#' . $res['id'] . ' · ' . $res['rol'] . ').')
+            : $this->flash('No se pudo crear: ' . $res['error'], 'error');
         $this->volver();
     }
 
-    // --- helpers de navegación / flash -------------------------------------
+    // --- helper de navegación ----------------------------------------------
     private function volver(): void
     {
         $volver = (string) ($_POST['volver'] ?? '');
         $qs = (isset($volver[0]) && $volver[0] === '?') ? $volver : '';
         $this->redirigir('usuarios' . $qs);
-    }
-
-    private function flash(string $msg): void
-    {
-        $_SESSION['flash'] = $msg;
-    }
-
-    private function tomarFlash(): ?string
-    {
-        $m = $_SESSION['flash'] ?? null;
-        unset($_SESSION['flash']);
-        return $m;
     }
 }

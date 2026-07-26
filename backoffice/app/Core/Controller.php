@@ -33,4 +33,22 @@ abstract class Controller
     {
         return $_POST;
     }
+
+    /**
+     * Deja un mensaje para la pantalla siguiente (patrón POST-Redirect-GET).
+     * $tipo: 'ok' | 'error' — decide el color del aviso. Un "no se pudo" tiene
+     * que salir en rojo, no en verde.
+     */
+    protected function flash(string $texto, string $tipo = 'ok'): void
+    {
+        $_SESSION['flash'] = ['texto' => $texto, 'tipo' => $tipo === 'error' ? 'error' : 'ok'];
+    }
+
+    /** Devuelve y consume el flash: ['texto' => ..., 'tipo' => ...] o null. */
+    protected function tomarFlash(): ?array
+    {
+        $f = $_SESSION['flash'] ?? null;
+        unset($_SESSION['flash']);
+        return is_array($f) ? $f : null;
+    }
 }

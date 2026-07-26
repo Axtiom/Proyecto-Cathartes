@@ -14,7 +14,7 @@ class Incidencia
     private const POR_PAGINA = 25;
 
     /**
-     * @param array{estado?:string,tipo?:string,zona?:string,desde?:string,hasta?:string,pagina?:int} $o
+     * @param array{estado?:string,validada?:string,tipo?:string,zona?:string,desde?:string,hasta?:string,pagina?:int} $o
      * @return array{items:array,total:int,pagina:int,paginas:int}
      */
     public static function listar(array $o): array
@@ -22,6 +22,9 @@ class Incidencia
         $where = [];
         $p = [];
         if (in_array($o['estado'] ?? '', ['en curso', 'finalizada'], true)) { $where[] = 'i.estado = ?'; $p[] = $o['estado']; }
+        // Validada es el eje del trabajo del admin en esta pantalla: hasta que no
+        // se valida no se acreditan los 150 puntos. El dashboard entra por acá.
+        if (in_array($o['validada'] ?? '', ['si', 'no'], true)) { $where[] = 'i.validada = ?'; $p[] = $o['validada']; }
         if (in_array($o['tipo'] ?? '', ['desbordado', 'roto', 'falta de recoleccion'], true)) { $where[] = 'i.tipo = ?'; $p[] = $o['tipo']; }
         if (($o['zona'] ?? '') !== '') { $where[] = 'r.zona = ?'; $p[] = $o['zona']; }
         if (($o['desde'] ?? '') !== '') { $where[] = 'i.fecha_ing >= ?'; $p[] = $o['desde'] . ' 00:00:00'; }

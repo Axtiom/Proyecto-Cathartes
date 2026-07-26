@@ -26,6 +26,11 @@ $solapas = [
 ];
 $roles = ['administrador' => 'Administrador', 'operario' => 'Operario', 'cuadrilla' => 'Cuadrilla', 'vecino' => 'Vecino'];
 
+// RN4: dar de baja a un administrador es potestad exclusiva del administrador
+// jefe. Si el admin de sesión no lo es, la fila de otro administrador se muestra
+// con el botón inerte + aviso, en vez de mandar el POST y comerse un 403.
+$bloqueadoRN4 = fn(array $u) => $u['rol'] === 'administrador' && !$esJefe;
+
 require BASE_PATH . '/app/Views/partials/head.php';
 ?>
 
@@ -61,10 +66,12 @@ require BASE_PATH . '/app/Views/partials/head.php';
                 </div>
                 <label class="bo-campo"><span>Contraseña (mín. 8)</span><input type="password" name="password" required></label>
 
-                <!-- Campos por subtipo: el JS los muestra/oculta según el rol; el server igual valida. -->
+                <!-- Campos por subtipo. Cada bloque arranca oculto y deshabilitado: el JS
+                     habilita solo el del rol elegido, así un campo que no corresponde ni
+                     siquiera se manda. Igual el server lo rechaza si llega (BUG-010). -->
                 <div class="bo-campo" data-rol="operario" hidden>
                     <span>Instalación <em>(obligatoria)</em></span>
-                    <select name="id_instalacion">
+                    <select name="id_instalacion" disabled>
                         <option value="">Elegí una instalación…</option>
                         <?php foreach ($instalaciones as $i): ?>
                             <option value="<?= (int) $i['ID'] ?>"><?= e($i['nombre']) ?></option>
@@ -73,7 +80,7 @@ require BASE_PATH . '/app/Views/partials/head.php';
                 </div>
                 <div class="bo-campo" data-rol="cuadrilla" hidden>
                     <span>Camión <em>(opcional)</em></span>
-                    <select name="id_camion">
+                    <select name="id_camion" disabled>
                         <option value="">Sin camión (asignar después)</option>
                         <?php foreach ($camiones as $c): ?>
                             <option value="<?= (int) $c['ID'] ?>"><?= e($c['matricula'] . ' · ' . $c['modelo']) ?></option>
@@ -84,7 +91,7 @@ require BASE_PATH . '/app/Views/partials/head.php';
                 <?php if ($esJefe): ?>
                 <label class="bo-campo" data-rol="administrador" hidden>
                     <span>¿Jefe?</span>
-                    <select name="jefe">
+                    <select name="jefe" disabled>
                         <option value="no">No</option>
                         <option value="si">Sí (puede gestionar administradores)</option>
                     </select>
@@ -102,7 +109,7 @@ require BASE_PATH . '/app/Views/partials/head.php';
 </div>
 
 <?php if ($flash): ?>
-    <div class="bo-aviso bo-aviso--ok"><?= e($flash) ?></div>
+    <div class="bo-aviso bo-aviso--<?= e($flash['tipo']) ?>"><?= e($flash['texto']) ?></div>
 <?php endif; ?>
 
 <!-- Solapas -->
@@ -181,18 +188,22 @@ require BASE_PATH . '/app/Views/partials/head.php';
                                         <input type="hidden" name="volver" value="<?= e($volver) ?>">
                                         <button type="submit" class="bo-btn bo-btn--ok bo-btn--sm">Aprobar</button>
                                     </form>
-                                    <form method="post" action="<?= e(ruta('usuarios/rechazar')) ?>" class="bo-inline">
-                                        <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
-                                        <input type="hidden" name="id" value="<?= (int) $u['ID'] ?>">
-                                        <input type="hidden" name="volver" value="<?= e($volver) ?>">
-                                        <button type="submit" class="bo-btn bo-btn--peligro bo-btn--sm">Rechazar</button>
-                                    </form>
+                                <?php endif; ?>
+                                <?php $texto = $esActivo ? 'Dar de baja' : 'Rechazar'; ?>
+                                <?php if ($bloqueadoRN4($u)): ?>
+                                    <!-- RN4: este admin no es jefe, así que no puede dar de baja a otro
+                                         administrador. El botón no manda nada y avisa en el momento; el
+                                         403 del servidor sigue estando por si alguien fuerza el POST. -->
+                                    <button type="button" class="bo-btn bo-btn--sm bo-btn--peligro bo-btn--bloqueado"
+                                            data-aviso="Solo un administrador jefe puede dar de baja a otro administrador (RN4).">
+                                        <?= e($texto) ?>
+                                    </button>
                                 <?php else: ?>
                                     <form method="post" action="<?= e(ruta('usuarios/rechazar')) ?>" class="bo-inline">
                                         <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
                                         <input type="hidden" name="id" value="<?= (int) $u['ID'] ?>">
                                         <input type="hidden" name="volver" value="<?= e($volver) ?>">
-                                        <button type="submit" class="bo-btn bo-btn--peligro bo-btn--sm">Dar de baja</button>
+                                        <button type="submit" class="bo-btn bo-btn--peligro bo-btn--sm"><?= e($texto) ?></button>
                                     </form>
                                 <?php endif; ?>
                             <?php endif; ?>
@@ -223,14 +234,20 @@ require BASE_PATH . '/app/Views/partials/head.php';
 
 <script>
 // Muestra/oculta los campos por subtipo según el rol elegido (solo UX; el server
-// valida igual). Toda la estructura está en el HTML; el JS solo togglea `hidden`.
+// valida igual). Toda la estructura está en el HTML; el JS solo togglea `hidden`
+// y `disabled` — un control deshabilitado no se manda en el POST, así el campo de
+// otro rol no viaja ni por accidente.
 (function () {
     var sel = document.getElementById('bo-rol');
     if (!sel) return;
     function sync() {
         var r = sel.value;
         document.querySelectorAll('#bo-alta [data-rol]').forEach(function (el) {
-            el.hidden = el.getAttribute('data-rol') !== r;
+            var suyo = el.getAttribute('data-rol') === r;
+            el.hidden = !suyo;
+            el.querySelectorAll('select, input, textarea').forEach(function (c) {
+                c.disabled = !suyo;
+            });
         });
     }
     sel.addEventListener('change', sync);

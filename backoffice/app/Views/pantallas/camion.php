@@ -18,7 +18,7 @@ require BASE_PATH . '/app/Views/partials/head.php';
     </div>
 </div>
 
-<?php if ($flash): ?><div class="bo-aviso bo-aviso--ok"><?= e($flash) ?></div><?php endif; ?>
+<?php if ($flash): ?><div class="bo-aviso bo-aviso--<?= e($flash['tipo']) ?>"><?= e($flash['texto']) ?></div><?php endif; ?>
 
 <div class="bo-detalle">
     <div class="bo-panel">

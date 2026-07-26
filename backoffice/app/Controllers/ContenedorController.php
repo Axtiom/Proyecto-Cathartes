@@ -35,16 +35,18 @@ class ContenedorController extends Controller
         $admin = Auth::exigir();
         $c = Contenedor::porId((int) ($_GET['id'] ?? 0));
         if ($c === null) {
-            $this->flash('Contenedor inexistente.');
+            $this->flash('Contenedor inexistente.', 'error');
             $this->redirigir('contenedores');
         }
         $this->vista('contenedor', [
-            'activo' => 'contenedores',
-            'admin'  => $admin,
-            'c'      => $c,
-            'rutas'  => Contenedor::rutas(),
-            'flash'  => $this->tomarFlash(),
-            'csrf'   => Auth::csrf(),
+            'activo'      => 'contenedores',
+            'admin'       => $admin,
+            'c'           => $c,
+            // Solo para mostrar a qué ruta pertenece; la reasignación se hace en
+            // la pantalla de la ruta, no acá.
+            'rutaActual'  => Contenedor::rutaDe((int) $c['ID_ruta']),
+            'flash'       => $this->tomarFlash(),
+            'csrf'        => Auth::csrf(),
         ]);
     }
 
@@ -53,7 +55,8 @@ class ContenedorController extends Controller
         Auth::exigir();
         Auth::verificarCsrf();
         $res = Contenedor::crear($this->campos());
-        $this->flash($res['ok'] ? ('Contenedor creado (#' . $res['id'] . ').') : ('No se pudo crear: ' . $res['error']));
+        $res['ok'] ? $this->flash('Contenedor creado (#' . $res['id'] . ').')
+                   : $this->flash('No se pudo crear: ' . $res['error'], 'error');
         $this->redirigir('contenedores');
     }
 
@@ -62,8 +65,11 @@ class ContenedorController extends Controller
         Auth::exigir();
         Auth::verificarCsrf();
         $id  = (int) ($_POST['id'] ?? 0);
+        // Sin `id_ruta`: el recorrido lo define la ruta (Pantalla 7). Aunque
+        // alguien fuerce el POST con id_ruta, el Model no lo lee en la edición.
         $res = Contenedor::actualizar($id, $this->campos());
-        $this->flash($res['ok'] ? ('Contenedor #' . $id . ' actualizado.') : ('No se pudo guardar: ' . $res['error']));
+        $res['ok'] ? $this->flash('Contenedor #' . $id . ' actualizado.')
+                   : $this->flash('No se pudo guardar: ' . $res['error'], 'error');
         $this->redirigir('contenedores/editar?id=' . $id);
     }
 
@@ -73,7 +79,8 @@ class ContenedorController extends Controller
         Auth::verificarCsrf();
         $id  = (int) ($_POST['id'] ?? 0);
         $res = Contenedor::baja($id, (string) ($_POST['motivo'] ?? ''));
-        $this->flash($res['ok'] ? ('Contenedor #' . $id . ' dado de baja.') : ('No se pudo dar de baja: ' . $res['error']));
+        $res['ok'] ? $this->flash('Contenedor #' . $id . ' dado de baja.')
+                   : $this->flash('No se pudo dar de baja: ' . $res['error'], 'error');
         $this->redirigir('contenedores/editar?id=' . $id);
     }
 
@@ -88,7 +95,4 @@ class ContenedorController extends Controller
             'longitud'  => $_POST['longitud'] ?? '',
         ];
     }
-
-    private function flash(string $m): void { $_SESSION['flash'] = $m; }
-    private function tomarFlash(): ?string { $m = $_SESSION['flash'] ?? null; unset($_SESSION['flash']); return $m; }
 }

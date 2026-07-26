@@ -1,8 +1,11 @@
 <?php
 /**
- * Pantalla 4 — Editar contenedor + baja. Espera: $admin, $activo, $c, $rutas,
+ * Pantalla 4 — Editar contenedor + baja. Espera: $admin, $activo, $c, $rutaActual,
  * $flash, $csrf. El estado 'dado de baja' solo se alcanza por la acción de baja;
  * editar el estado a un valor operativo reactiva el contenedor.
+ *
+ * La ruta del contenedor no se edita acá: la ruta es la que decide por qué
+ * contenedores pasa, así que el recorrido se administra en la Pantalla 7.
  */
 $titulo = 'Contenedor #' . (int) $c['ID'] . ' · Backoffice';
 $deBaja = $c['estado'] === 'dado de baja';
@@ -19,7 +22,7 @@ require BASE_PATH . '/app/Views/partials/head.php';
     </div>
 </div>
 
-<?php if ($flash): ?><div class="bo-aviso bo-aviso--ok"><?= e($flash) ?></div><?php endif; ?>
+<?php if ($flash): ?><div class="bo-aviso bo-aviso--<?= e($flash['tipo']) ?>"><?= e($flash['texto']) ?></div><?php endif; ?>
 
 <div class="bo-detalle">
     <!-- Edición -->
@@ -47,19 +50,25 @@ require BASE_PATH . '/app/Views/partials/head.php';
                     </select>
                 </label>
             </div>
-            <label class="bo-campo"><span>Ruta</span>
-                <select name="id_ruta" required>
-                    <?php foreach ($rutas as $r): ?>
-                        <option value="<?= (int) $r['ID'] ?>"<?= (int) $c['ID_ruta'] === (int) $r['ID'] ? ' selected' : '' ?>><?= e($r['zona'] . ' · ' . $r['nombre']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
             <div class="bo-alta__fila">
                 <label class="bo-campo"><span>Latitud</span><input type="text" name="latitud" value="<?= e($c['latitud']) ?>"></label>
                 <label class="bo-campo"><span>Longitud</span><input type="text" name="longitud" value="<?= e($c['longitud']) ?>"></label>
             </div>
             <button type="submit" class="bo-btn bo-btn--pri" style="margin-top:6px">Guardar cambios</button>
         </form>
+
+        <!-- La ruta NO se edita acá: el recorrido lo define la ruta, en su propia
+             pantalla. Se muestra como dato con un link para ir a cambiarlo. -->
+        <h2 class="bo-panel__tit" style="margin-top:22px">Recorrido</h2>
+        <div class="bo-dato">
+            <span>Ruta</span>
+            <span><?= e($rutaActual['zona'] . ' · ' . $rutaActual['nombre']) ?></span>
+        </div>
+        <p class="bo-sub" style="font-size:13px;margin:10px 0 0">
+            Por qué contenedores pasa cada ruta se define en la pantalla de la ruta.
+        </p>
+        <a class="bo-btn bo-btn--sm" style="margin-top:10px"
+           href="<?= e(ruta('rutas/editar') . '?id=' . (int) $c['ID_ruta']) ?>">Editar el recorrido de esta ruta</a>
     </div>
 
     <!-- Baja -->

@@ -14,7 +14,8 @@ class IncidenciaController extends Controller
     {
         $admin = Auth::exigir();
         $filtros = [
-            'estado' => (string) ($_GET['estado'] ?? ''),
+            'estado'   => (string) ($_GET['estado'] ?? ''),
+            'validada' => (string) ($_GET['validada'] ?? ''),
             'tipo'   => (string) ($_GET['tipo'] ?? ''),
             'zona'   => (string) ($_GET['zona'] ?? ''),
             'desde'  => (string) ($_GET['desde'] ?? ''),
@@ -38,7 +39,7 @@ class IncidenciaController extends Controller
         $id  = (int) ($_GET['id'] ?? 0);
         $inc = Incidencia::detalle($id);
         if ($inc === null) {
-            $this->flash('No se encontró la incidencia.');
+            $this->flash('No se encontró la incidencia.', 'error');
             $this->redirigir('incidencias');
         }
         $this->vista('incidencia', [
@@ -56,9 +57,9 @@ class IncidenciaController extends Controller
         Auth::exigir();
         Auth::verificarCsrf();
         $id = (int) ($_POST['id'] ?? 0);
-        $this->flash(Incidencia::validar($id)
-            ? 'Incidencia #' . $id . ' validada. Se acreditaron 150 puntos al vecino.'
-            : 'La incidencia ya estaba validada o no existe.');
+        Incidencia::validar($id)
+            ? $this->flash('Incidencia #' . $id . ' validada. Se acreditaron 150 puntos al vecino.')
+            : $this->flash('La incidencia ya estaba validada o no existe.', 'error');
         $this->redirigir('incidencias/ver?id=' . $id);
     }
 
@@ -69,7 +70,8 @@ class IncidenciaController extends Controller
         $id  = (int) ($_POST['id'] ?? 0);
         $cua = (int) ($_POST['id_cuadrilla'] ?? 0);
         $res = Incidencia::asignar($id, $cua);
-        $this->flash($res['ok'] ? ('Cuadrilla asignada a la incidencia #' . $id . '.') : ('No se pudo asignar: ' . $res['error']));
+        $res['ok'] ? $this->flash('Cuadrilla asignada a la incidencia #' . $id . '.')
+                   : $this->flash('No se pudo asignar: ' . $res['error'], 'error');
         $this->redirigir('incidencias/ver?id=' . $id);
     }
 
@@ -94,8 +96,4 @@ class IncidenciaController extends Controller
         header('Cache-Control: private, max-age=300');
         readfile($ruta);
     }
-
-    // --- flash (mismo patrón que UsuarioController) ------------------------
-    private function flash(string $m): void { $_SESSION['flash'] = $m; }
-    private function tomarFlash(): ?string { $m = $_SESSION['flash'] ?? null; unset($_SESSION['flash']); return $m; }
 }

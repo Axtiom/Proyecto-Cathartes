@@ -26,13 +26,18 @@ require BASE_PATH . '/app/Views/partials/head.php';
     </div>
 </div>
 
-<?php if ($flash): ?><div class="bo-aviso bo-aviso--ok"><?= e($flash) ?></div><?php endif; ?>
+<?php if ($flash): ?><div class="bo-aviso bo-aviso--<?= e($flash['tipo']) ?>"><?= e($flash['texto']) ?></div><?php endif; ?>
 
 <!-- Filtros (GET) -->
 <form class="bo-filtros" method="get" action="<?= e(ruta('incidencias')) ?>">
     <select name="estado">
         <option value="">Todos los estados</option>
         <?php foreach ($estados as $k => $v): ?><option value="<?= e($k) ?>"<?= $f['estado'] === $k ? ' selected' : '' ?>><?= e($v) ?></option><?php endforeach; ?>
+    </select>
+    <select name="validada">
+        <option value="">Validadas y sin validar</option>
+        <option value="no"<?= $f['validada'] === 'no' ? ' selected' : '' ?>>Sin validar</option>
+        <option value="si"<?= $f['validada'] === 'si' ? ' selected' : '' ?>>Ya validadas</option>
     </select>
     <select name="tipo">
         <option value="">Todos los tipos</option>

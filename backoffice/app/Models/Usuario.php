@@ -267,9 +267,27 @@ class Usuario
             return ['ok' => false, 'error' => 'Ya existe un usuario con ese email.'];
         }
 
+        // Aislamiento por rol. Cada campo de subtipo pertenece a un solo rol; si
+        // llega con valor y no es el rol elegido, es un error y se corta acá — no
+        // se ignora en silencio. El panel no debería dejar mandarlo (el JS oculta
+        // lo que no corresponde), pero el límite duro va en el servidor: ocultar
+        // un <select> es UX, no autorización. Ver BUG-010.
+        $duenoDe = ['id_instalacion' => 'operario', 'id_camion' => 'cuadrilla', 'jefe' => 'administrador'];
+        $neutro  = ['id_instalacion' => ['', '0'], 'id_camion' => ['', '0'], 'jefe' => ['', 'no']];
+        foreach ($duenoDe as $campo => $dueno) {
+            $valor = trim((string) ($datos[$campo] ?? ''));
+            if (in_array($valor, $neutro[$campo], true)) {
+                continue; // vino vacío / en su valor por defecto: no asigna nada
+            }
+            if ($rol !== $dueno) {
+                return ['ok' => false, 'error' => 'Un ' . $rol . ' no puede recibir el campo "' . $campo . '" (es de ' . $dueno . ').'];
+            }
+        }
+
         // Validaciones de subtipo ANTES de tocar la base (no reventar contra la FK).
-        $idInst = (int) ($datos['id_instalacion'] ?? 0);
-        $idCam  = (int) ($datos['id_camion'] ?? 0);
+        // Los IDs se leen solo para el rol dueño; para el resto quedan en 0/'no'.
+        $idInst = $rol === 'operario'  ? (int) ($datos['id_instalacion'] ?? 0) : 0;
+        $idCam  = $rol === 'cuadrilla' ? (int) ($datos['id_camion'] ?? 0)      : 0;
         if ($rol === 'operario' && $idInst <= 0) {
             return ['ok' => false, 'error' => 'El operario necesita una instalación.'];
         }
@@ -280,7 +298,7 @@ class Usuario
                 return ['ok' => false, 'error' => 'Ese camión ya está asignado a otra cuadrilla.'];
             }
         }
-        $jefe = (($datos['jefe'] ?? '') === 'si') ? 'si' : 'no';
+        $jefe = ($rol === 'administrador' && ($datos['jefe'] ?? '') === 'si') ? 'si' : 'no';
 
         $pdo = Database::conexion();
         $pdo->beginTransaction();

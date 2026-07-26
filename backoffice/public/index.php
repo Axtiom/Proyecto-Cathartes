@@ -20,6 +20,31 @@ require BASE_PATH . '/app/Core/Auth.php';
 
 Env::cargar(BASE_PATH . '/.env');
 Config::cargar(require BASE_PATH . '/config/config.php');
+
+/**
+ * Red de contención de errores. Una excepción sin capturar (una PDOException, por
+ * ejemplo) imprime por defecto el stack trace completo: rutas absolutas del
+ * servidor, nombres de tabla y fragmentos de SQL. Eso no puede llegar al
+ * navegador. Se loguea completo y se responde una página mínima; el detalle en
+ * pantalla solo con APP_DEBUG=true (dev).
+ *
+ * Va acá, en el front controller, y no como try/catch en cada Model: cubre todas
+ * las pantallas actuales y las que falten.
+ */
+$depurar = (bool) Config::get('app.debug', false);
+ini_set('display_errors', $depurar ? '1' : '0');
+
+set_exception_handler(function (Throwable $e) use ($depurar) {
+    error_log('[backoffice] ' . get_class($e) . ': ' . $e->getMessage()
+        . ' @ ' . $e->getFile() . ':' . $e->getLine());
+
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/html; charset=utf-8');
+    }
+    require BASE_PATH . '/app/Views/pantallas/500.php';
+});
+
 Auth::iniciar();
 
 $router = new Router();
