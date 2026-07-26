@@ -19,8 +19,9 @@
     'use strict';
 
     var CONFIG = {
-        // Base de la API de Gestión (estadísticas públicas). Ajustar por entorno.
-        apiGestion: 'http://127.0.0.1:8082'
+        // Base de la API de Gestión (estadísticas y contenedores públicos).
+        // Mismo origen que la landing bajo Apache -> sin CORS. Ajustar por entorno.
+        apiGestion: 'http://localhost/sigeru/api-gestion/public'
     };
 
     /**

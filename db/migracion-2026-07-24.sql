@@ -28,7 +28,7 @@ USE cathartes;
 ALTER TABLE `ruta`
   ADD COLUMN `zona`   varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '' AFTER `nombre`,
   ADD COLUMN `estado` enum('activa','inactiva') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'activa' AFTER `frecuencia`;
-
+  
 UPDATE `ruta` SET `zona` = 'Buceo' WHERE `ID` = 1;
 ALTER TABLE `ruta` ALTER COLUMN `zona` DROP DEFAULT;
 

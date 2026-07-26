@@ -7,6 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Leaflet: CDN + respaldo local (mapa de contenedores) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="assets/leaflet/leaflet.css">
     <link rel="stylesheet" href="css/estilos.css">
 </head>
 <body>
@@ -152,13 +155,8 @@
                     </a>
                 </div>
 
-                <!-- Panel de mapa — decorativo, 100% CSS (sin API real). Estado vacío. -->
-                <div class="mapa" role="img" aria-label="Mapa operativo sin rutas activas por ahora">
-                    <div class="mapa__chip">
-                        <span class="mapa__chip-punto" aria-hidden="true"></span>
-                        Sin rutas activas
-                    </div>
-                </div>
+                <!-- Mapa real de contenedores activos (Leaflet/OSM, sin sesión). -->
+                <div id="landing-mapa" style="min-height:340px;border-radius:16px"></div>
             </div>
         </section>
 
@@ -265,7 +263,10 @@
         <span class="fab__texto">Reportar incidencia</span>
     </a>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>window.L || document.write('<script src="assets/leaflet/leaflet.js"><\/script>');</script>
     <script src="js/api.js"></script>
+    <script src="js/mapa.js"></script>
     <script src="js/landing.js"></script>
 </body>
 </html>

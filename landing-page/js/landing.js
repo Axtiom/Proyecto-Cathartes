@@ -47,3 +47,27 @@
         }
     });
 })();
+
+/* ---------------------------------------------------------------------------
+ * Mapa público de contenedores activos (módulo Cathartes.Mapa · Leaflet/OSM).
+ * Sin sesión, sin acción en el popup. Degradado elegante: si falla el fetch o
+ * no cargó Leaflet, el módulo muestra el mapa centrado en Montevideo con aviso.
+ * ------------------------------------------------------------------------- */
+(function () {
+    'use strict';
+    if (!window.CathartesApi || !window.Cathartes || !window.Cathartes.Mapa) {
+        if (window.console) console.warn('[landing] Mapa no disponible (falta api.js, mapa.js o Leaflet).');
+        return;
+    }
+    window.CathartesApi.get('/contenedores/publicos').then(function (res) {
+        var items = (res.data && res.data.items) || [];
+        var marcadores = items.map(function (c) {
+            return {
+                id: c.id, latitud: c.latitud, longitud: c.longitud,
+                tipo: 'contenedor', estado: c.estado,
+                titulo: c.ubicacion, ubicacion: c.tipo
+            };
+        });
+        window.Cathartes.Mapa.crear({ contenedor: '#landing-mapa', marcadores: marcadores, alto: '340px' });
+    });
+})();

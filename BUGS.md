@@ -22,6 +22,13 @@
 | BUG-004 | 2026-07-23 | Frontend / CSS   | Cajas `.aviso` con `hidden` se mostraban vacías      | media     | RESUELTO |
 | BUG-005 | 2026-07-23 | APIs / Router    | El Router solo matchea en la raíz del dominio        | alta      | RESUELTO |
 | BUG-006 | 2026-07-23 | Entorno / hosting| Apache servía una copia stale de `htdocs\sigeru`     | alta      | RESUELTO |
+| BUG-007 | 2026-07-24 | BD / documentación| Doc de Fase 3.9 pedía crear `toma`, pero ya existía | media     | RESUELTO |
+| BUG-008 | 2026-07-24 | Backoffice / PHP | `extract(EXTR_SKIP)` con clave `datos` no llegaba a la vista | media     | RESUELTO |
+| BUG-009 | 2026-07-24 | Backoffice / seguridad | El admin escribe la contraseña del usuario que crea | baja      | ABIERTO |
+| BUG-010 | 2026-07-26 | Backoffice / alta multirol | El alta dejaba asignarle un camión a un Vecino     | alta      | RESUELTO |
+| BUG-011 | 2026-07-26 | Backoffice / marca | El logo del sidebar perdió el ala izquierda y las ruedas | baja      | RESUELTO |
+| BUG-012 | 2026-07-26 | Backoffice / seguridad | Un error de PDO imprimía el stack trace en el navegador | alta      | RESUELTO |
+| BUG-013 | 2026-07-26 | Backoffice / validación | Un número demasiado grande desbordaba la columna y daba 500 | media     | RESUELTO |
 
 ---
 
@@ -296,3 +303,334 @@ Router con `normalizarPath`); cadena e2e login→2FA→`/yo` OK.
 **Nota para producción.** En Rocky Linux el equivalente es un symlink
 (`ln -s /ruta/al/repo /var/www/...`) o servir el repo directo como docroot del
 vhost. No versionar copias manuales del árbol en el docroot.
+
+---
+
+### BUG-007 — La documentación pedía crear una tabla (`toma`) que ya existía
+
+**Área:** BD / documentación. **Severidad:** media. **Estado:** RESUELTO.
+
+**Qué pasó.** El prompt de la Fase 3.9 abría con una "reparación": crear la tabla
+puente `toma` (Cuadrilla↔Ruta) porque, según el MER y el pasaje a tablas, "nunca
+llegó al DDL". Al ejecutar el `CREATE TABLE toma`, MySQL cortó con
+`1050 Table 'toma' already exists`.
+
+**Causa.** La tabla **ya estaba en la base viva y en `db/BD.sql`**, pero con una
+forma distinta a la que asumía el documento: PK `(ID_cuadrilla, ID_ruta, fecha)`
+—incluye una columna `fecha`— en vez de la PK de dos columnas sin atributos que
+proponía el MD. No es un descuido: es el mismo patrón temporal que usan las otras
+relaciones M:N del esquema (`autorizacion`, `gestiona`, `verificacion`), todas con
+`fecha` en la PK para guardar historial. La documentación (MER/pasaje/diccionario)
+venía por detrás del DDL. Se destapó también que el relevamiento de la Fase 4 solo
+listaba 15 de las 22 tablas reales (faltaban `toma`, `autorizacion`, `gestiona`,
+`maquinaria`, `repuestos`, `usa`, `verificacion`).
+
+**Solución.** Se aplicó la Regla cero ("el DDL gana"): no se tocó `toma`. Decisión
+de Juan (2026-07-24): dejarla como está y solo sembrarla (incluyendo `fecha=NOW()`).
+Se quitó el `CREATE TABLE toma` de `db/migracion-2026-07-24.sql` y se ajustó el
+`INSERT` de seed para incluir `fecha`. El resto de la migración (ruta.zona/estado,
+camion.fecha_baja/motivo_baja, cuadrilla.estado, rename de la cuadrilla, 2ª ruta)
+se ejecutó sin problemas.
+
+**Verificación.** `SHOW CREATE TABLE toma` confirma que quedó intacta; la fila de
+seed `(3, 1, NOW())` entró bien. `db/BD.sql` ya tenía las 22 tablas: no hubo drift
+de tablas, solo del *contenido* de la doc conceptual, que Juan actualizará el lunes.
+
+**Insumo para la doc.** Al reconciliar MER/pasaje/diccionario: `toma` es una
+relación **con atributo temporal** (`fecha` en la PK), no una simple asociación
+binaria. Y sí existe el vínculo Cuadrilla↔Ruta en el modelo (vía `toma`), cosa que
+el relevamiento parcial de la Fase 4 había reportado erróneamente como ausente.
+
+---
+
+### BUG-008 — `extract(EXTR_SKIP)` con una clave que colisiona con el parámetro
+
+**Área:** Backoffice / PHP (capa de vistas). **Severidad:** media. **Estado:** RESUELTO.
+
+**Qué pasó.** La pantalla de Usuarios del backoffice renderizaba el **estado vacío**
+("Sin usuarios") aunque la base tenía filas y el Model las devolvía bien. En la vista
+saltaban `Warning: Undefined array key "items"` y `"pagina"`.
+
+**Causa.** El renderizador de vistas era:
+`protected function vista(string $vista, array $datos = []) { extract($datos, EXTR_SKIP); require ...; }`.
+El Controller pasaba, entre otras, una clave `'datos'` (el resultado paginado del
+Model). Al hacer `extract($datos, EXTR_SKIP)`, PHP intenta crear una variable local
+`$datos` a partir de esa clave, pero `$datos` YA EXISTE (es el propio parámetro con
+todo el bolsón). Con `EXTR_SKIP`, ante la colisión **no la sobreescribe**: la salta.
+Resultado: dentro de la vista, `$datos` seguía siendo el arreglo completo
+(`admin`, `activo`, `datos`, `conteos`, …), sin claves `items`/`pagina`.
+
+**Solución.** Renombrar los parámetros del método a algo que no pueda colisionar con
+ninguna clave de datos: `vista(string $__vista, array $__ctx = [])` y
+`extract($__ctx, EXTR_SKIP)`. Así la clave `'datos'` crea correctamente su `$datos`
+local en la vista. Verificado: la tabla renderiza los 4 usuarios reales.
+
+**Regla derivada.** Al usar `extract()` sobre un array de contexto, los nombres de
+los parámetros/variables locales del renderizador deben ir con un prefijo reservado
+(`$__`) para no chocar con las claves del contexto.
+
+---
+
+### BUG-009 — El administrador conoce la contraseña del usuario que da de alta
+
+**Área:** Backoffice / seguridad. **Severidad:** baja. **Estado:** ABIERTO (decisión
+consciente por tiempo, Fase 4.1).
+
+**Qué pasa.** En el alta manual de Usuarios (backoffice), el administrador **escribe**
+la contraseña inicial del usuario que crea. Es decir, un tercero conoce la credencial
+de una cuenta ajena. Vale para los cuatro roles.
+
+**Por qué queda así por ahora.** Se decidió (Juan, Fase 4.1) dejarlo simple por tiempo:
+el alta funciona y el usuario puede usar la clave que le pasan.
+
+**Lo correcto (a implementar).** Que el sistema **genere una contraseña temporal**
+(no elegida por el admin), se la entregue al usuario por un canal aparte, y **fuerce
+el cambio en el primer ingreso** (un flag/estado de "debe cambiar contraseña"). Eso
+saca al admin del conocimiento de la credencial definitiva. Requiere una columna o
+tabla nueva para el flag → coordinar con el MER antes de tocar el esquema.
+
+---
+
+### BUG-010 — El alta de usuarios dejaba asignarle un camión a un Vecino
+
+- **Fecha:** 2026-07-26
+- **Área:** Backoffice / Pantalla 3 (alta multirol, Fase 4.1) — CSS + Model
+- **Severidad:** alta (permitía cruzar datos entre subtipos desde la UI)
+- **Estado:** RESUELTO
+- **Detectado en:** prueba manual de Juan sobre el panel de alta.
+
+**Síntoma.** Dos cosas en el mismo panel:
+
+1. El bloque de texto del modal se veía **cortado**.
+2. Al elegir rol **Vecino**, seguían apareciendo los campos de otros subtipos
+   (Instalación, Camión, ¿Jefe?) y se les podía elegir valor. Un vecino con camión
+   no tiene sentido de dominio.
+
+**Causa.** Es **el mismo patrón que [BUG-004](#bug-004--las-cajas-aviso-con-hidden-se-mostraban-vacías)**,
+ahora en el Backoffice: los tres bloques por subtipo salen del servidor con el
+atributo `hidden`, pero `admin.css` declara
+
+```css
+.bo-campo { display: flex; flex-direction: column; gap: 5px; }
+```
+
+y una regla de autor le gana a `[hidden] { display: none }` de la hoja del
+navegador. Resultado: los tres bloques se veían **siempre**, sin importar el rol
+elegido, y el JS que togglea `el.hidden` no tenía efecto visible. Con tres bloques
+de más el formulario crecía y por eso además se veía cortado.
+
+**Impacto real (medido).** El Model ya hacía `switch ($rol)` para el `INSERT` de
+subtipo, así que **un vecino nunca llegó a tener fila en `cuadrilla`**: la base no
+quedó inconsistente. El daño era de interfaz y de confianza — el panel prometía una
+asignación que no ocurría, sin avisar. Igual se endureció el servidor: ocultar un
+`<select>` es UX, no autorización (mismo criterio que la matriz de la Fase 3.95).
+
+**Solución aplicada.** Tres capas:
+
+1. **CSS** (`backoffice/public/css/admin.css`) — la misma normalización que ya
+   existe en el frontend:
+   ```css
+   [hidden] { display: none !important; }
+   ```
+   Más `.bo-alta__modal form > * { flex-shrink: 0; }`, para que en el flex column
+   del modal los hijos no se compriman y el texto no se corte.
+2. **Vista + JS** (`app/Views/pantallas/usuarios.php`) — los tres `<select>` de
+   subtipo salen del servidor con `disabled`; el JS habilita solo el del rol
+   elegido. Un control deshabilitado **no se manda** en el POST, así el campo
+   ajeno no viaja ni por accidente.
+3. **Model** (`app/Models/Usuario.php::crear`) — límite duro: cada campo de
+   subtipo tiene un rol dueño (`id_instalacion`→operario, `id_camion`→cuadrilla,
+   `jefe`→administrador). Si llega con valor y el rol no es el dueño, el alta se
+   **rechaza con mensaje**, no se ignora en silencio. Además los IDs se leen solo
+   para el rol dueño (`$idInst`/`$idCam` quedan en 0 para el resto).
+
+**De paso.** Los mensajes de fallo salían en verde: el flash no distinguía tipo y
+todas las vistas lo pintaban con `bo-aviso--ok`. Se movieron `flash()`/`tomarFlash()`
+al `Controller` base con un `$tipo` (`'ok'|'error'`) y las 7 pantallas ahora usan
+`bo-aviso--<tipo>`.
+
+**Verificación.** Con sesión de admin jefe, POST directo a
+`/backoffice/public/usuarios/crear` (sin pasar por la pantalla, igual que la matriz
+de la Fase 3.95):
+
+| # | Envío | Esperado | Resultado |
+|---|-------|----------|-----------|
+| 1 | `rol=vecino` + `id_camion=1` | rechazo | «Un vecino no puede recibir el campo "id_camion" (es de cuadrilla)» |
+| 2 | `rol=vecino` + `jefe=si` | rechazo | «…el campo "jefe" (es de administrador)» |
+| 3 | `rol=operario` + `id_camion=1` | rechazo | «…el campo "id_camion" (es de cuadrilla)» |
+| 4 | `rol=cuadrilla` + `id_instalacion=1` | rechazo | «…el campo "id_instalacion" (es de operario)» |
+| 5 | `rol=vecino` limpio | alta | creado |
+| 6 | `rol=operario` + `id_instalacion=1` | alta | creado |
+| 7 | `rol=cuadrilla` sin camión | alta | creado |
+| 8 | `rol=cuadrilla` + camión ya asignado | rechazo | «Ese camión ya está asignado a otra cuadrilla» |
+| 9 | `rol=administrador` + `jefe=si` | alta | creado |
+
+Los rechazos se muestran en rojo (`bo-aviso--error`) y las altas en verde. Las filas
+de prueba se borraron después (base de vuelta en 5 usuarios; `autorizacion` y
+`gestiona` en 0).
+
+---
+
+### BUG-011 — El logo del sidebar perdió el ala izquierda (y las ruedas)
+
+- **Fecha:** 2026-07-26
+- **Área:** Backoffice / `app/Views/partials/sidebar.php` (marca)
+- **Severidad:** baja (visual, pero es la marca del sistema)
+- **Estado:** RESUELTO
+- **Detectado en:** revisión visual de Juan sobre el backoffice.
+
+**Síntoma.** El isotipo Cathartes del sidebar aparecía con **una sola ala**, la
+derecha. Además le faltaban las cuatro circunferencias inferiores (las ruedas del
+camión).
+
+**Causa.** Al transcribir el SVG al partial del backoffice se copió el `<path>` del
+ala **una sola vez**. En el original (`landing-page/index.html` y las pantallas de
+`frontend-usuarios`) el ala aparece **dos veces**: la segunda lleva
+`transform="translate(96,0) scale(-1,1)"`, que la espeja sobre el eje vertical del
+`viewBox` de 96 y produce el ala izquierda. No es un path distinto, es el mismo
+espejado — por eso al copiar «el path del ala» se perdió la mitad del dibujo sin
+que salte a la vista en el código. En la misma transcripción se cayeron los cuatro
+`<circle>` de las ruedas.
+
+**Solución aplicada.** Se reemplazó el SVG del sidebar por el canónico de la landing
+(ala + ala espejada + cuerpo + camión + 4 ruedas), con un comentario que explica de
+dónde sale el ala izquierda para que no se vuelva a caer en la próxima copia.
+
+**Regla derivada.** El SVG de la marca **no se transcribe a mano**: se copia
+completo desde `landing-page/index.html`, que es la fuente única. Cualquier app
+nueva (landing Axtiom, etc.) copia de ahí.
+
+**Verificación.** `curl` de una pantalla del backoffice: el marcado servido trae 2
+ocurrencias del path del ala (una con el `transform` de espejado) y las 4
+circunferencias de las ruedas.
+
+---
+
+### BUG-012 — Un error de PDO imprimía el stack trace completo en el navegador
+
+- **Fecha:** 2026-07-26
+- **Área:** Backoffice / `public/index.php` (front controller). Aplica a las 5 pantallas con escritura.
+- **Severidad:** alta (divulgación de información)
+- **Estado:** RESUELTO
+- **Detectado en:** verificación del alta de la Pantalla 7 (Rutas), probando un
+  `nombre` con bytes que no eran UTF-8 válido.
+
+**Síntoma.** El POST devolvió `500` con esto impreso en la página:
+
+```
+Fatal error: Uncaught PDOException: SQLSTATE[HY000]: General error: 1366
+Incorrect string value: '\x97 Cord...' for column 'nombre' at row 1
+in D:\sigeru\backoffice\app\Models\Ruta.php:151
+```
+
+**Causa.** El front controller no tenía manejador de excepciones y PHP quedaba con
+`display_errors` activo. Cualquier `PDOException` no capturada llegaba entera al
+navegador. `Usuario::crear` era el único write envuelto en `try/catch` (por la
+transacción); `Instalacion`, `Ruta`, `Contenedor` y `Camion` no.
+
+**El rechazo en sí era correcto:** la conexión declara `utf8mb4` y MySQL hizo bien
+en rechazar bytes inválidos (error 1366). El bug no es que fallara, es **cómo
+falló**: expuso la ruta absoluta del servidor, el archivo y la línea del Model, el
+nombre de la columna y un fragmento del valor.
+
+**Impacto.** Un atacante autenticado (o cualquiera que provoque un 500) obtenía el
+layout del filesystem del servidor y pistas del esquema. Contradice el criterio de
+ciberseguridad del proyecto, que en el resto del sistema no revela detalle
+(la 403 del backoffice, por ejemplo, es deliberadamente genérica).
+
+**Solución aplicada.** Manejador central en `public/index.php` — una sola red que
+cubre las 5 pantallas y las que falten, en vez de `try/catch` repetido en cada
+Model:
+
+```php
+$depurar = (bool) Config::get('app.debug', false);
+ini_set('display_errors', $depurar ? '1' : '0');
+
+set_exception_handler(function (Throwable $e) use ($depurar) {
+    error_log('[backoffice] ' . get_class($e) . ': ' . $e->getMessage()
+        . ' @ ' . $e->getFile() . ':' . $e->getLine());
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: text/html; charset=utf-8');
+    }
+    require BASE_PATH . '/app/Views/pantallas/500.php';
+});
+```
+
+Más una vista `500.php` autónoma (no incluye el chrome: el sidebar toca la sesión y
+en un 500 no se puede asumir estado sano). El detalle solo se imprime con
+`APP_DEBUG=true`, variable nueva del `.env` documentada en el `.env.example` como
+**siempre `false` en el servidor**.
+
+**Verificación.** Mismo POST con bytes inválidos: responde `500` con la página
+genérica («Algo falló del lado del servidor»); `grep` del HTML servido no encuentra
+`Fatal error`, ni `Uncaught`, ni `D:\sigeru`. El detalle queda en el log de PHP.
+
+**Pendiente relacionado.** Las APIs (`api-usuarios`, `api-gestion`,
+`api-recoleccion`) hay que revisarlas por el mismo motivo: son JSON, así que les
+corresponde un handler que devuelva `{"error":"..."}` genérico con 500, no una
+vista HTML.
+
+---
+
+### BUG-013 — Un número demasiado grande desbordaba la columna y daba 500
+
+- **Fecha:** 2026-07-26
+- **Área:** Backoffice / validación de los Models (Recompensa, Camión, Instalación, Contenedor)
+- **Severidad:** media (no corrompe datos, pero corta la operación con un 500)
+- **Estado:** RESUELTO
+- **Detectado en:** prueba manual de Juan, cargando un costo en puntos absurdamente
+  grande en el alta de una recompensa.
+
+**Síntoma.** Con un número muy grande en un campo numérico, el alta devolvía **500**
+en vez de un mensaje de validación. (Gracias a [BUG-012](#bug-012--un-error-de-pdo-imprimía-el-stack-trace-completo-en-el-navegador)
+el 500 ya salía sin stack trace, pero seguía siendo un 500.)
+
+**Causa.** Las validaciones usaban `(int) $valor > 0` y confiaban en el cast de PHP.
+En PHP de 64 bits `(int) '99999999999'` **no desborda**: da `99999999999`. O sea, el
+número pasa la validación intacto y explota recién en MySQL, cuyo `INT` con signo
+llega hasta **2.147.483.647** (error 1264 «Out of range value»). El límite real es el
+de la **columna**, no el del tipo de PHP — y nadie lo estaba mirando.
+
+El mismo agujero estaba en las coordenadas: `latitud`/`longitud` son
+`DECIMAL(9,6)`, que no admite más de `999.999999`. Una latitud de `99999`
+desbordaba igual, y de paso era geográficamente imposible (la latitud va de -90 a
+90) sin que nada lo dijera.
+
+**Impacto.** Cuatro pantallas: costo en puntos (Recompensas), capacidad (Camiones),
+capacidad y ocupación (Instalaciones), coordenadas (Contenedores e Instalaciones).
+
+**Solución aplicada.** Dos helpers en `app/Core/helpers.php`, usados por los cuatro
+Models:
+
+```php
+const MYSQL_INT_MAX = 2147483647;
+function entero_en_rango(mixed $v, int $min = 0, int $max = MYSQL_INT_MAX): bool
+function coordenada_valida(mixed $v, float $limite): bool
+```
+
+`entero_en_rango()` exige que el valor sea entero (regex, no cast) y lo compara
+contra el límite de la columna; descarta de entrada los que tienen más dígitos que
+el `int` de PHP. `coordenada_valida()` acepta vacío (la columna es NULL-able) y si
+viene exige rango geográfico real: ±90 la latitud, ±180 la longitud — más chico que
+el tope de `DECIMAL(9,6)`, así que nunca desborda.
+
+Los mensajes dicen el rango, en vez de un «valor inválido» a ciegas.
+
+**Verificación.** Ocho casos por POST directo, todos con mensaje de validación (ni
+un 500):
+
+| Envío | Resultado |
+|---|---|
+| `valor=99999999999` | «entre 1 y 2.147.483.647» |
+| `valor=2147483648` (tope +1) | rechazo |
+| `valor=2147483647` (el tope justo) | **alta OK** |
+| `valor=abc` | rechazo |
+| Camión `capacidad=999999999999` | rechazo |
+| Instalación `capacidad=99999999999` | rechazo |
+| Instalación `latitud=99999` | «entre -90 y 90» |
+| Contenedor `longitud=99999` | «entre -180 y 180» |
+
+**Pendiente relacionado.** Las tres APIs validan sus entradas por separado: hay que
+pasarles el mismo criterio (hoy `api-gestion` y `api-recoleccion` casi no tienen
+escrituras, pero `api-usuarios` sí).
