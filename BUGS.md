@@ -29,6 +29,9 @@
 | BUG-011 | 2026-07-26 | Backoffice / marca | El logo del sidebar perdió el ala izquierda y las ruedas | baja      | RESUELTO |
 | BUG-012 | 2026-07-26 | Backoffice / seguridad | Un error de PDO imprimía el stack trace en el navegador | alta      | RESUELTO |
 | BUG-013 | 2026-07-26 | Backoffice / validación | Un número demasiado grande desbordaba la columna y daba 500 | media     | RESUELTO |
+| BUG-014 | 2026-07-27 | Frontend / chrome por rol | Cuadrilla y operario veían el header y el footer del vecino | alta      | RESUELTO |
+| BUG-015 | 2026-07-27 | Frontend / red | Un request colgado dejaba la pantalla en «Cargando…» para siempre | media     | RESUELTO |
+| BUG-016 | 2026-07-27 | Frontend / chrome por rol | Con el partial en caché no se dibujaba ningún header y no se podía cerrar sesión | alta      | RESUELTO |
 
 ---
 
@@ -634,3 +637,201 @@ un 500):
 **Pendiente relacionado.** Las tres APIs validan sus entradas por separado: hay que
 pasarles el mismo criterio (hoy `api-gestion` y `api-recoleccion` casi no tienen
 escrituras, pero `api-usuarios` sí).
+
+---
+
+### BUG-014 — Cuadrilla y operario veían el header y el footer del vecino
+
+- **Fecha:** 2026-07-27
+- **Área:** Frontend de Usuarios / chrome compartido (`partials/layout.html`, `js/layout.js`, `js/guardia.js`)
+- **Severidad:** alta (le ofrecía a cada rol links que no le corresponden)
+- **Estado:** RESUELTO
+- **Detectado en:** prueba manual de Juan, navegando como cuadrilla y como operario.
+
+**Síntoma.** El nav mostraba **Reportar / Mis incidencias / Recompensas** a roles que no
+son vecino. Los links funcionaban en el sentido de que la API respondía **403**
+correctamente — el límite duro estaba bien — pero nunca deberían haber estado ahí. Lo
+mismo en la columna «Sistema» del footer.
+
+**Causa.** El chrome tenía **un solo** `<template id="tpl-header">`, escrito con el nav
+del vecino, y las 8 pantallas lo clonaban tal cual. No había noción de rol en el
+layout: `layout.js` rellenaba nombre, iniciales y saldo, y nada más.
+
+Un agravante que hace que el bug pueda volver de forma **silenciosa**: el partial se
+baja por `fetch('partials/layout.html')`, o sea que el navegador lo cachea. Con un
+partial viejo en caché, un `layout.js` nuevo que busque bloques por rol no encuentra
+ninguno y **no oculta nada** — el resultado es exactamente este síntoma, sin ningún
+error en consola. Es el mismo patrón de caché rancia que ya nos había costado un rato
+con el 2FA.
+
+**Solución aplicada.** Tres cosas:
+
+1. **Un `<template>` de header por rol**: `tpl-header-vecino`, `tpl-header-cuadrilla`,
+   `tpl-header-operario`. Cada uno trae su nav completa y su propia pantalla de inicio
+   en la marca. `layout.js` clona `tpl-header-<rol>` con el rol que viene de
+   `GET /yo`. Para que tres headers no signifiquen triplicar marcado, las dos piezas
+   idénticas salen a su propio template y se insertan en un slot: `tpl-logo` (el SVG,
+   que ya se rompió una vez al transcribirlo a mano — ver [BUG-011](#bug-011--el-logo-del-sidebar-perdió-el-ala-izquierda-y-las-ruedas))
+   y `tpl-avatar` (badge de puntos + menú).
+2. **Footer**: sigue siendo uno solo (no se duplica), pero la columna «Sistema» tiene
+   un bloque por rol marcado con `data-rol`, y se muestra el que corresponde.
+   «Mi perfil» del menú de usuario también quedó acotado a vecino: `perfil.html` es
+   una pantalla de vecino y a los otros roles les daba 403.
+3. **Se eliminó el rol por defecto.** `guardia.js` tenía
+   `var rolEsperado = (opts && opts.rol) || 'vecino'`. Ese `|| 'vecino'` es la raíz
+   conceptual del bug: el sistema asumía vecino cuando nadie decía lo contrario. Ahora
+   **cada pantalla declara su rol** (las 15) y si no lo declara no se adivina: se
+   avisa por consola y no se aplica guardia de rol.
+
+**Beneficio lateral del diseño nuevo.** Con tres templates separados, un partial rancio
+en caché ya **no falla en silencio**: no existe `tpl-header-cuadrilla`, así que
+`armarHeader` devuelve `null`, loguea `[layout] no hay header para el rol "cuadrilla"`
+y la página se dibuja sin header. Obviamente roto en vez de sutilmente roto. Y a
+propósito **no** cae de vuelta al header del vecino, que es justo lo que había que
+erradicar.
+
+**Verificación.** Dos partes.
+
+*Composición del chrome* — se simuló la lógica de `layout.js` sobre el partial servido
+(sin navegador) y se comprobó, para los tres roles, qué links termina viendo cada uno:
+
+| Rol | Nav | Marca | Footer «Sistema» |
+|---|---|---|---|
+| Vecino | Inicio · Reportar · Mis incidencias · Mapa · Recompensas | `inicio.html` | las 4 del vecino |
+| Cuadrilla | Inicio · Mis rutas · Intervenciones · Mapa | `cuadrilla.html` | las 4 de cuadrilla |
+| Operario | Inicio · Mi instalación · Informes | `operario.html` | las 3 de operario |
+
+Con la comprobación explícita de que **ningún link de un rol apunta a una pantalla de
+otro**. «Mi perfil» aparece solo para vecino.
+
+*Límite duro por subtipo* — los cuatro usuarios contra `GET /cuadrilla/ruta`, que exige
+estar en la tabla `cuadrilla`:
+
+| Sesión | Resultado |
+|---|---|
+| cuadrilla | **200** |
+| operario | **403** |
+| administrador | **403** |
+| vecino | **403** |
+| sin cookie | **401** |
+
+`GET /yo` devuelve el rol correcto para los cuatro, que es de donde el frontend lo lee.
+
+**Nota honesta sobre el diagnóstico.** No pude reproducir el síntoma en el navegador
+(la extensión de Chrome no está conectada en este entorno), así que la caché rancia del
+partial queda como **la causa más probable, no como causa confirmada**. Lo que sí está
+verificado es que el código actual compone el chrome correcto para los tres roles y que
+el 403 por subtipo funciona. La verificación visual con los cuatro logins queda
+pendiente de hacerse a mano.
+
+---
+
+### BUG-015 — Un request colgado dejaba la pantalla en «Cargando…» para siempre
+
+- **Fecha:** 2026-07-27
+- **Área:** Frontend de Usuarios / cliente HTTP (`js/api.js`) y bootstrap (`js/guardia.js`, `js/layout.js`)
+- **Severidad:** media (la pantalla se lee como rota)
+- **Estado:** RESUELTO
+- **Detectado en:** prueba manual de Juan sobre las pantallas nuevas de la Fase 3.
+
+**Síntoma.** Cuando la API no respondía, los estados de carga quedaban colgados
+indefinidamente. Una pantalla congelada en «Cargando…» se lee como rota; una que dice
+«no se pudo cargar» se lee como lo que es.
+
+**Causa.** Tres agujeros distintos, uno arriba del otro:
+
+1. **`fetch` no tiene timeout.** El `request()` de `api.js` cubría el fallo de red con
+   un `.catch` que devuelve `status: 0`, pero eso solo dispara si la conexión falla. Si
+   el servidor **acepta la conexión y nunca contesta**, la promesa no se resuelve nunca,
+   el `.then` de la pantalla no corre y el estado de carga se queda ahí. Ningún `.catch`
+   ayuda con una promesa que no se resuelve.
+2. **`Layout.montar` podía rechazar.** `cargarPartial().then(...)` no tenía `.catch`, y
+   `guardia.js` hacía `montar(...).then(render)`. Si el partial no bajaba, o si
+   `armarHeader` tiraba una excepción, la promesa se rechazaba y **`render` nunca
+   corría**: ninguna región de la pantalla llegaba a pedir sus datos y todas quedaban en
+   su estado inicial de carga.
+3. **Una excepción a mitad de `render`** dejaba en carga todas las regiones que
+   faltaban pintar.
+
+**Solución aplicada.**
+
+1. **Timeout por request** (`api.js`), con `AbortController`:
+   ```js
+   var TIMEOUT_MS = 12000;
+   var ctrl = new AbortController();
+   opts.signal = ctrl.signal;
+   reloj = setTimeout(function () { ctrl.abort(); }, TIMEOUT_MS);
+   ```
+   Al abortar, `fetch` rechaza y cae al `catch` que ya existía: termina como
+   `status: 0`, el **mismo camino que un fallo de red**. Las pantallas no necesitaron un
+   caso aparte para «colgado». Es el arreglo de raíz: vale para las tres APIs y para
+   todas las pantallas, presentes y futuras.
+2. **`Layout.montar` nunca rechaza**: se le agregó `.catch` y devuelve resuelto igual.
+   Una pantalla sin header es fea; una pantalla congelada parece rota.
+3. **`render` va envuelto en `try/catch`** en `guardia.js`, y si tira, `caerAError()`
+   pasa a `error` toda región `[data-region]` que haya quedado en `cargando`.
+
+**Verificación.** Cada región con estado de carga en las 7 pantallas nuevas tiene
+transición a `error`, a `vacio` y a `ok` en su controlador (chequeado archivo por
+archivo). Los 7 endpoints del contrato responden **404** hoy, así que el camino de
+error es el que se ejercita de verdad al abrir las pantallas.
+
+---
+
+### BUG-016 — Con el partial en caché no se dibujaba ningún header y no se podía cerrar sesión
+
+- **Fecha:** 2026-07-27
+- **Área:** Frontend de Usuarios / chrome (`js/layout.js`, `partials/layout.html`)
+- **Severidad:** alta (deja al usuario encerrado en la sesión)
+- **Estado:** RESUELTO
+- **Detectado en:** prueba de Juan inmediatamente después del arreglo de [BUG-014](#bug-014--cuadrilla-y-operario-veían-el-header-y-el-footer-del-vecino).
+
+**Síntoma.** No aparecía **ningún** header, y sin header no hay menú de usuario: no se
+podía cerrar sesión de la forma normal.
+
+**Causa — y es una causa que me pertenece.** Al arreglar BUG-014 decidí que, si no
+existía el header del rol, `armarHeader` devolviera `null` en vez de caer al header del
+vecino. La intención era buena (que el fallo fuera **ruidoso** en vez de silencioso),
+pero el efecto fue peor que el bug original: antes el usuario veía una nav equivocada
+pero **funcional**; después no veía nada y quedaba sin salida.
+
+Y el disparador fue justamente el escenario que yo mismo había anotado como probable en
+BUG-014: **`partials/layout.html` viejo en la caché del navegador**. El partial se pide
+por `fetch`, así que se cachea como cualquier recurso. Quedó `layout.js` nuevo (que
+busca `tpl-header-<rol>`) contra un partial viejo (que solo tenía `tpl-header`), y el
+resultado fue exactamente «ningún header». Eso además **confirma** la hipótesis de
+BUG-014, que allá había quedado como probable y no como comprobada: el modo de falla
+combinado JS-nuevo/partial-viejo es real y se reprodujo solo.
+
+**Solución aplicada.** Dos puntas, una de raíz y una de contención:
+
+1. **Que el partial no pueda venir rancio** (`js/layout.js`):
+   ```js
+   fetch('partials/layout.html', { cache: 'no-cache' })
+   ```
+   `no-cache` obliga al navegador a revalidar contra el servidor — un `304` barato
+   cuando no cambió, el archivo fresco cuando sí. Es el arreglo de fondo: elimina la
+   clase entera de problemas «JS nuevo + partial viejo». (Ojo, la misma trampa aplica a
+   cualquier recurso que se baje por `fetch` en runtime, no solo a este.)
+
+2. **Que nunca se pueda quedar sin poder salir**: se agregó `tpl-header-minimo` al
+   partial — marca y avatar (o sea, «Cerrar sesión»), **sin nav**. Si falta el header
+   del rol de la sesión, se usa ese. Resuelve la tensión entre los dos bugs sin
+   traicionar a ninguno: la **nav** no cae nunca a la de otro rol (BUG-014), y el
+   **logout** existe siempre (BUG-016). Una nav vacía es honesta; una nav ajena, no.
+
+El respaldo se escribió como `<template>` en el partial y no con `createElement` en el
+JS, para no romper dos reglas del proyecto de una: nada de construir estructura en JS, y
+ningún texto fijo visible que exista solo en un `.js`.
+
+**Verificación.** El partial servido trae los 7 templates (`tpl-logo`, `tpl-avatar`,
+`tpl-header-minimo`, los tres por rol y `tpl-footer`); el mínimo trae sus slots de logo
+y avatar; «Cerrar sesión» sigue viviendo en el HTML y no en `layout.js` (0 ocurrencias
+allí); `createElement` no se usa en `layout.js` (la única mención es un comentario). Las
+15 pantallas responden 200 y la composición del chrome por rol sigue dando correcto para
+los tres roles.
+
+**Lección para la próxima.** «Fallar ruidosamente» no puede significar «dejar la app
+inusable». Cuando un componente compartido no se puede montar, el degradado tiene que
+conservar las acciones de escape — salir de la sesión, volver al inicio — y perder solo
+lo que no se puede resolver con seguridad.
