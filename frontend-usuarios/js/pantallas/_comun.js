@@ -32,6 +32,43 @@
             span.className = 'badge badge--' + suf;
         },
 
+        /**
+         * Estados de una región de datos: 'cargando' | 'vacio' | 'error' | 'ok'.
+         * Los TRES mensajes están escritos en el HTML de la pantalla, cada uno con
+         * su data-estado; acá solo se muestra el que toca y se oculta el resto. El
+         * contenido real va en el elemento [data-contenido], que se ve solo con 'ok'.
+         *
+         * Con la API caída, la pantalla muestra su estado de error o su vacío. Eso
+         * es lo correcto: nunca se inventan datos de ejemplo.
+         *
+         * REGIONES ANIDADAS: una región puede contener otra (el panel de repuestos
+         * vive dentro del detalle de la intervención; la maquinaria, dentro de la
+         * instalación). Por eso el scope tiene que llevar `data-region` y acá solo se
+         * tocan los estados cuya región más cercana ES este scope — si no, el padre
+         * le pisaba el estado al hijo al repintarse.
+         */
+        estado: function (scope, cual) {
+            if (!scope) return;
+            var propio = function (el) {
+                return !el.closest || el.closest('[data-region]') === scope;
+            };
+            scope.querySelectorAll('[data-estado]').forEach(function (el) {
+                if (!propio(el)) return;
+                el.hidden = el.getAttribute('data-estado') !== cual;
+            });
+            var conts = scope.querySelectorAll('[data-contenido]');
+            for (var i = 0; i < conts.length; i++) {
+                if (propio(conts[i])) { conts[i].hidden = cual !== 'ok'; break; }
+            }
+        },
+
+        /** Porcentaje entero y acotado a 0-100 (barras de progreso). */
+        pct: function (parte, total) {
+            var t = Number(total) || 0;
+            if (t <= 0) return 0;
+            return Math.max(0, Math.min(100, Math.round((Number(parte) || 0) * 100 / t)));
+        },
+
         /** Rellena todos los [data-campo] de un root con un objeto {campo: valor}. */
         rellenar: function (root, datos) {
             root.querySelectorAll('[data-campo]').forEach(function (el) {

@@ -74,5 +74,5 @@
         });
     }
 
-    C.App.iniciar({ activo: 'mis-incidencias' }, render);
+    C.App.iniciar({ activo: 'mis-incidencias', rol: 'vecino' }, render);
 })();

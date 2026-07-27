@@ -83,5 +83,5 @@
         });
     }
 
-    C.App.iniciar({ activo: 'reportar' }, render);
+    C.App.iniciar({ activo: 'reportar', rol: 'vecino' }, render);
 })();

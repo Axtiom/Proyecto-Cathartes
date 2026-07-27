@@ -51,5 +51,5 @@
         });
     }
 
-    C.App.iniciar({ activo: 'inicio' }, render);
+    C.App.iniciar({ activo: 'inicio', rol: 'vecino' }, render);
 })();

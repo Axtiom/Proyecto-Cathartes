@@ -67,5 +67,5 @@
         });
     }
 
-    C.App.iniciar({ activo: 'recompensas' }, render);
+    C.App.iniciar({ activo: 'recompensas', rol: 'vecino' }, render);
 })();

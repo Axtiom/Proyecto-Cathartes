@@ -1,47 +1,138 @@
 <!DOCTYPE html>
 <!-- ============================================================================
-     Pantalla de CUADRILLA — stub "en construcción" (Fase 3.95).
-     Destino real del redirect por rol para cuadrilla + guard UX (el duro está en
-     la API). Mismo patrón que operario.html.
+     Pantalla C1: INICIO de la CUADRILLA.
+     Datos: API Recolección (GET /cuadrilla/resumen).
+     JS que la acompaña: js/pantallas/cuadrilla-inicio.js
+
+     Regla "el HTML manda": toda la estructura y el texto fijo están acá; el JS solo
+     rellena los data-campo y clona los <template>. Cada región de datos trae sus
+     tres estados escritos (cargando / vacío / error): con la API caída se ve el
+     estado, nunca datos inventados.
+
+     Reemplaza el stub creado en la Fase 3.95.
 ============================================================================= -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuadrilla · Cathartes</title>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>Inicio · Cuadrilla · Cathartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/estilos.css">
-    <style>
-        .stub { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; }
-        .stub__card { max-width: 460px; }
-        .stub h1 { font-family: var(--fuente-titulo); font-size: 30px; margin: 0 0 8px; }
-        .stub p { color: var(--texto-tenue); }
-        .stub__salir { margin-top: 20px; background: transparent; border: 1px solid var(--borde); color: var(--texto-tenue); border-radius: 10px; padding: 9px 16px; font: inherit; cursor: pointer; }
-        .stub__salir:hover { border-color: var(--rojo); color: var(--rojo); }
-    </style>
+    <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="app">
-    <div class="stub">
-        <div class="stub__card">
-            <h1><span data-campo="nombre">Cuadrilla</span></h1>
-            <p>Las pantallas de cuadrilla están en construcción.</p>
-            <button type="button" class="stub__salir" id="salir">Cerrar sesión</button>
+    <div data-shell-header></div>
+
+    <main class="app-main">
+        <h1 class="app-main__titulo">Hola, <span data-campo="nombre">cuadrilla</span></h1>
+        <p class="app-main__sub">Tu jornada de hoy: rutas asignadas, intervenciones pendientes y contenedores por verificar.</p>
+
+        <!-- Métricas: las tres tarjetas están escritas; solo el número sale de la API. -->
+        <div class="seccion" id="reg-metricas" data-region>
+            <div class="metrica-grid" data-contenido hidden>
+                <div class="metrica">
+                    <div class="metrica__valor" data-campo="rutas_hoy">0</div>
+                    <div class="metrica__etiqueta">Rutas de hoy</div>
+                    <div class="metrica__pie">Asignadas a tu cuadrilla</div>
+                </div>
+                <div class="metrica">
+                    <div class="metrica__valor" data-campo="intervenciones_pendientes">0</div>
+                    <div class="metrica__etiqueta">Intervenciones pendientes</div>
+                    <div class="metrica__pie">Sin marcar como finalizadas</div>
+                </div>
+                <div class="metrica">
+                    <div class="metrica__valor" data-campo="contenedores_a_verificar">0</div>
+                    <div class="metrica__etiqueta">Contenedores por verificar</div>
+                    <div class="metrica__pie">De las rutas que tenés asignadas</div>
+                </div>
+            </div>
+            <p class="estado" data-estado="cargando">Cargando tu resumen…</p>
+            <div class="vacio" data-estado="vacio" hidden>
+                <p class="vacio__titulo">Sin datos de jornada</p>
+                <p class="vacio__texto">Todavía no hay nada asignado a tu cuadrilla.</p>
+            </div>
+            <div class="vacio vacio--error" data-estado="error" hidden>
+                <p class="vacio__titulo">No se pudo cargar el resumen</p>
+                <p class="vacio__texto">La API de Recolección no respondió. Volvé a intentar en un momento.</p>
+            </div>
         </div>
-    </div>
+
+        <!-- Ruta activa -->
+        <div class="seccion" id="reg-ruta" data-region>
+            <h2 class="seccion__titulo">Ruta activa
+                <a class="seccion__link" href="cuadrilla-rutas.html">Ver mis rutas</a>
+            </h2>
+            <div class="ruta-tarjeta" data-contenido hidden>
+                <div class="ruta-tarjeta__cab">
+                    <div>
+                        <h3 class="ruta-tarjeta__tit" data-campo="ruta_nombre">—</h3>
+                        <p class="ruta-tarjeta__meta">
+                            Zona <span data-campo="ruta_zona">—</span> ·
+                            frecuencia <span data-campo="ruta_frecuencia">—</span> ·
+                            tomada el <span data-campo="ruta_fecha">—</span>
+                        </p>
+                    </div>
+                    <span class="badge badge--funcional" data-campo="ruta_estado">activa</span>
+                </div>
+
+                <!-- Avance del recorrido. Se apoya en la tabla `verificacion`
+                     (ID_usuario, ID_contenedor, fecha), que ya existe en el DDL. -->
+                <div class="progreso"><span class="progreso__llena" data-barra style="width:0%"></span></div>
+                <div class="progreso__txt">
+                    <span><b data-campo="verificados">0</b> de <b data-campo="total_contenedores">0</b> contenedores verificados hoy</span>
+                    <span data-campo="pct">0%</span>
+                </div>
+
+                <a class="cta" style="margin-top:14px" href="cuadrilla-mapa.html">Ver el recorrido en el mapa</a>
+            </div>
+            <p class="estado" data-estado="cargando">Cargando la ruta activa…</p>
+            <div class="vacio" data-estado="vacio" hidden>
+                <p class="vacio__titulo">Sin ruta asignada</p>
+                <p class="vacio__texto">Cuando un administrador te asigne una ruta, la vas a ver acá con su avance.</p>
+            </div>
+            <div class="vacio vacio--error" data-estado="error" hidden>
+                <p class="vacio__titulo">No se pudo cargar la ruta</p>
+                <p class="vacio__texto">La API de Recolección no respondió.</p>
+            </div>
+        </div>
+
+        <!-- Intervenciones urgentes -->
+        <div class="seccion" id="reg-urgentes" data-region>
+            <h2 class="seccion__titulo">Intervenciones urgentes
+                <a class="seccion__link" href="cuadrilla-intervenciones.html">Ver todas</a>
+            </h2>
+            <div class="lista" id="lista-urgentes" data-contenido hidden></div>
+            <p class="estado" data-estado="cargando">Cargando intervenciones…</p>
+            <div class="vacio" data-estado="vacio" hidden>
+                <p class="vacio__titulo">Nada urgente</p>
+                <p class="vacio__texto">No tenés intervenciones abiertas. Cuando te asignen una incidencia, aparece acá.</p>
+            </div>
+            <div class="vacio vacio--error" data-estado="error" hidden>
+                <p class="vacio__titulo">No se pudieron cargar las intervenciones</p>
+                <p class="vacio__texto">La API de Recolección no respondió.</p>
+            </div>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <!-- Molde de una intervención urgente (valores de muestra, los reemplaza la API). -->
+    <template id="tpl-urgente">
+        <a class="lista__item" href="cuadrilla-intervenciones.html">
+            <div>
+                <div class="principal" data-campo="titulo">#0 · desbordado</div>
+                <div class="secundario" data-campo="detalle">01/01/2026 · Av. Rivera 3245, Buceo</div>
+            </div>
+            <span class="badge badge--desbordado" data-campo="estado">en curso</span>
+        </a>
+    </template>
 
     <script src="js/api.js"></script>
+    <script src="js/pantallas/_comun.js"></script>
+    <script src="js/layout.js"></script>
     <script src="js/guardia.js"></script>
-    <script>
-        (function () {
-            var C = window.Cathartes;
-            C.Guardia.proteger().then(function (ctx) {
-                if (ctx.usuario.rol !== 'cuadrilla') { window.location.href = '403.html'; return; }
-                document.querySelector('[data-campo="nombre"]').textContent = ctx.usuario.nombre || 'Cuadrilla';
-            });
-            document.getElementById('salir').addEventListener('click', function () {
-                C.Api.post('/logout').then(function () { C.Auth.limpiar(); window.location.href = 'login.html'; });
-            });
-        })();
-    </script>
+    <script src="js/pantallas/cuadrilla-inicio.js"></script>
 </body>
 </html>

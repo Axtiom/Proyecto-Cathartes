@@ -37,5 +37,5 @@
         });
     }
 
-    C.App.iniciar({ activo: 'mapa' }, render);
+    C.App.iniciar({ activo: 'mapa', rol: 'vecino' }, render);
 })();

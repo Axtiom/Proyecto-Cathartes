@@ -84,5 +84,5 @@
         });
     }
 
-    C.App.iniciar({}, render);
+    C.App.iniciar({ rol: 'vecino' }, render);
 })();

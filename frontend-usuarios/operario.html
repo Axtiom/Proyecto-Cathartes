@@ -1,49 +1,91 @@
 <!DOCTYPE html>
 <!-- ============================================================================
-     Pantalla de OPERARIO — stub "en construcción" (Fase 3.95).
-     Existe para que el redirect por rol y los guardias tengan un destino real y
-     la matriz de verificación sea testeable. El guard duro está en la API; acá
-     guardia.js chequea el rol (UX) y manda a 403 si no es operario.
+     Pantalla O1: INICIO del OPERARIO.
+     Datos: API Recolección (GET /operario/resumen).
+     JS que la acompaña: js/pantallas/operario-inicio.js
+
+     La instalación sale de `operario.ID_instalacion`: un operario ve SOLO la suya.
+     Regla "el HTML manda": estructura y texto fijo acá; el JS solo rellena
+     data-campo. Cada región trae sus tres estados escritos.
+
+     Reemplaza el stub creado en la Fase 3.95.
 ============================================================================= -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Operario · Cathartes</title>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <title>Inicio · Operario · Cathartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/estilos.css">
-    <style>
-        .stub { min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; }
-        .stub__card { max-width: 460px; }
-        .stub h1 { font-family: var(--fuente-titulo); font-size: 30px; margin: 0 0 8px; }
-        .stub p { color: var(--texto-tenue); }
-        .stub__salir { margin-top: 20px; background: transparent; border: 1px solid var(--borde); color: var(--texto-tenue); border-radius: 10px; padding: 9px 16px; font: inherit; cursor: pointer; }
-        .stub__salir:hover { border-color: var(--rojo); color: var(--rojo); }
-    </style>
+    <link rel="stylesheet" href="css/app.css">
 </head>
 <body class="app">
-    <div class="stub">
-        <div class="stub__card">
-            <h1>Hola, <span data-campo="nombre">operario</span></h1>
-            <p>Las pantallas de operario están en construcción.</p>
-            <button type="button" class="stub__salir" id="salir">Cerrar sesión</button>
+    <div data-shell-header></div>
+
+    <main class="app-main">
+        <h1 class="app-main__titulo">Hola, <span data-campo="nombre">operario</span></h1>
+        <p class="app-main__sub">Estado de tu instalación y acceso rápido para registrar la ocupación.</p>
+
+        <div class="seccion" id="reg-resumen" data-region>
+            <div data-contenido hidden>
+                <!-- Identidad de la instalación -->
+                <div class="panel">
+                    <h2 class="seccion__titulo" style="margin-top:0">
+                        <span data-campo="instalacion_nombre">—</span>
+                        <span class="badge badge--en-stock" data-campo="instalacion_tipo">centro de acopio</span>
+                    </h2>
+                    <div class="dato-linea"><span>Ubicación</span><span data-campo="instalacion_ubicacion">—</span></div>
+                    <div class="dato-linea"><span>Residuo que maneja</span><span data-campo="residuo">—</span></div>
+                </div>
+
+                <!-- Tres tarjetas fijas; solo los números salen de la API. -->
+                <div class="metrica-grid" style="margin-top:16px">
+                    <div class="metrica">
+                        <div class="metrica__valor"><span data-campo="pct">0</span>%</div>
+                        <div class="metrica__etiqueta">Ocupación</div>
+                        <div class="metrica__pie">Alerta a partir del 80%</div>
+                        <div class="progreso"><span class="progreso__llena" data-barra style="width:0%"></span></div>
+                    </div>
+                    <div class="metrica">
+                        <div class="metrica__valor" data-campo="capacidad">0</div>
+                        <div class="metrica__etiqueta">Capacidad (m³)</div>
+                        <div class="metrica__pie"><span data-campo="libre">0</span> m³ libres</div>
+                    </div>
+                    <div class="metrica">
+                        <div class="metrica__valor"><span data-campo="maq_ok">0</span> / <span data-campo="maq_total">0</span></div>
+                        <div class="metrica__etiqueta">Maquinaria operativa</div>
+                        <div class="metrica__pie">Funcional sobre el total</div>
+                    </div>
+                </div>
+
+                <div class="vacio vacio--error" data-alerta-umbral hidden style="margin-top:16px">
+                    <p class="vacio__titulo">Ocupación en el umbral</p>
+                    <p class="vacio__texto">La instalación superó el 80% de su capacidad. Conviene coordinar una descarga.</p>
+                </div>
+
+                <a class="cta" style="margin-top:16px" href="operario-instalacion.html">Registrar ocupación</a>
+            </div>
+
+            <p class="estado" data-estado="cargando">Cargando tu instalación…</p>
+            <div class="vacio" data-estado="vacio" hidden>
+                <p class="vacio__titulo">Sin instalación asignada</p>
+                <p class="vacio__texto">Tu cuenta de operario no tiene una instalación asociada. Un administrador tiene que asignártela.</p>
+            </div>
+            <div class="vacio vacio--error" data-estado="error" hidden>
+                <p class="vacio__titulo">No se pudo cargar la instalación</p>
+                <p class="vacio__texto">La API de Recolección no respondió. Volvé a intentar en un momento.</p>
+            </div>
         </div>
-    </div>
+    </main>
+
+    <div data-shell-footer></div>
 
     <script src="js/api.js"></script>
+    <script src="js/pantallas/_comun.js"></script>
+    <script src="js/layout.js"></script>
     <script src="js/guardia.js"></script>
-    <script>
-        (function () {
-            var C = window.Cathartes;
-            C.Guardia.proteger().then(function (ctx) {
-                if (ctx.usuario.rol !== 'operario') { window.location.href = '403.html'; return; }
-                document.querySelector('[data-campo="nombre"]').textContent =
-                    (ctx.usuario.nombre || '').split(/\s+/)[0] || ctx.usuario.nombre || 'operario';
-            });
-            document.getElementById('salir').addEventListener('click', function () {
-                C.Api.post('/logout').then(function () { C.Auth.limpiar(); window.location.href = 'login.html'; });
-            });
-        })();
-    </script>
+    <script src="js/pantallas/operario-inicio.js"></script>
 </body>
 </html>

@@ -1,33 +1,93 @@
 <!-- ============================================================================
      partials/layout.html — Header y footer compartidos del Frontend de Usuarios.
      ----------------------------------------------------------------------------
-     Son la misma cáscara en las 8 pantallas, así que viven acá UNA sola vez y
+     Son la misma cáscara en las 15 pantallas, así que viven acá UNA sola vez y
      js/layout.js los clona. Regla "el HTML manda": toda la estructura y el texto
      fijo (nav, columnas del footer, teléfono, correo, bajada) están escritos acá,
      legibles; el JS solo rellena los data-campo (nombre, rol, saldo, iniciales) y
      engancha eventos (menú del avatar, cerrar sesión).
+
+     UN HEADER POR ROL (Fase 3). Hay TRES templates de header —
+     tpl-header-vecino, tpl-header-cuadrilla, tpl-header-operario — y layout.js clona
+     el del rol de la sesión. No hay un header "genérico" que después se recorte: cada
+     rol tiene su nav escrita completa, con sus propios links y su propia pantalla de
+     inicio en la marca. Abrir este archivo alcanza para saber qué ve cada rol.
+
+     Para que tres headers no signifiquen triplicar marcado, las dos piezas idénticas
+     viven en su propio template y se clonan dentro de cada header:
+       · tpl-logo    — el isotipo Cathartes (SVG). Se escribe UNA vez: transcribirlo
+                       a mano ya nos costó el BUG-011 (se perdió el ala izquierda).
+       · tpl-avatar  — badge de puntos + menú de usuario, común a los tres.
+     El punto de inserción va marcado con data-logo / data-avatar.
+
+     El FOOTER sigue siendo uno solo (no se duplica): solo su columna «Sistema» cambia
+     por rol, y esos tres bloques están marcados con data-rol.
 ============================================================================= -->
 
-<template id="tpl-header">
+<!-- Isotipo Cathartes. Fuente única: si hay que cambiarlo, se cambia acá y nada más. -->
+<template id="tpl-logo">
+    <span class="hdr__logo" aria-hidden="true">
+        <svg viewBox="0 0 96 96" width="24" height="24">
+            <circle cx="48" cy="48" r="45" fill="none" stroke="#2E4A54" stroke-width="2"/>
+            <circle cx="48" cy="48" r="38.5" fill="none" stroke="#14B8A6" stroke-width="1.4" opacity="0.55"/>
+            <g fill="#2FBF71">
+                <path d="M48 31 C 60 24 72 23 84 28 C 79 29 81 31 77 31 C 74 31 75 33 71 33 C 68 33 61 32 50 35 Z" transform="translate(96,0) scale(-1,1)"/>
+                <path d="M48 31 C 60 24 72 23 84 28 C 79 29 81 31 77 31 C 74 31 75 33 71 33 C 68 33 61 32 50 35 Z"/>
+                <path d="M48 20 C 51.5 27 52.5 30 51.5 34 C 51 39 50 43 48 47 C 46 43 45 39 44.5 34 C 43.5 30 44.5 27 48 20 Z"/>
+                <path d="M27 66 L27 57.5 Q27 56 28.5 56 L37 56 L40 50.5 Q41 49 42.5 49 L67 49 Q68.5 49 68.5 50.5 L68.5 66 Q68.5 67.5 67 67.5 L28.5 67.5 Q27 67.5 27 66 Z"/>
+            </g>
+            <circle cx="40" cy="68" r="4.3" fill="#2FBF71"/><circle cx="40" cy="68" r="1.9" fill="#0B1620"/>
+            <circle cx="60" cy="68" r="4.3" fill="#2FBF71"/><circle cx="60" cy="68" r="1.9" fill="#0B1620"/>
+        </svg>
+    </span>
+</template>
+
+<!-- Lado derecho del header: igual en los tres roles. El badge de puntos solo se
+     muestra si hay saldo (o sea, solo al vecino), y «Mi perfil» solo al vecino:
+     perfil.html es una pantalla suya y a los otros roles les daría 403. -->
+<template id="tpl-avatar">
+    <div class="hdr__derecha">
+        <span class="badge-puntos" data-badge hidden title="Puntos disponibles">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21.4l1.4-6.8L2.2 9l6.9-.7z"/></svg>
+            <span><b data-campo="saldo">0</b> pts</span>
+        </span>
+
+        <div class="avatar">
+            <button class="avatar__btn" type="button" data-avatar-btn aria-haspopup="true" aria-expanded="false" data-campo="iniciales">JP</button>
+            <div class="avatar__menu" data-avatar-menu hidden>
+                <div class="avatar__nombre">
+                    <b data-campo="nombre">Nombre del usuario</b>
+                    <span data-campo="rol">rol</span>
+                </div>
+                <a class="avatar__item" href="perfil.html" data-rol="vecino" hidden>Mi perfil</a>
+                <button class="avatar__item avatar__item--peligro" type="button" data-accion="logout">Cerrar sesión</button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<!-- Header mínimo de respaldo. Se usa SOLO si no existe el header del rol de la
+     sesión (por ejemplo, un rol nuevo al que todavía no se le escribió el suyo).
+     Trae la marca y el avatar — o sea, «Cerrar sesión» — y NO trae nav: nunca hay que
+     ofrecerle a un rol los links de otro (BUG-014), pero tampoco hay que dejarlo sin
+     poder salir de la sesión (BUG-016). Una nav vacía es honesta; una nav ajena, no. -->
+<template id="tpl-header-minimo">
     <header class="hdr">
-        <a class="hdr__marca" href="inicio.html">
-            <span class="hdr__logo" aria-hidden="true">
-                <svg viewBox="0 0 96 96" width="24" height="24">
-                    <circle cx="48" cy="48" r="45" fill="none" stroke="#2E4A54" stroke-width="2"/>
-                    <circle cx="48" cy="48" r="38.5" fill="none" stroke="#14B8A6" stroke-width="1.4" opacity="0.55"/>
-                    <g fill="#2FBF71">
-                        <path d="M48 31 C 60 24 72 23 84 28 C 79 29 81 31 77 31 C 74 31 75 33 71 33 C 68 33 61 32 50 35 Z" transform="translate(96,0) scale(-1,1)"/>
-                        <path d="M48 31 C 60 24 72 23 84 28 C 79 29 81 31 77 31 C 74 31 75 33 71 33 C 68 33 61 32 50 35 Z"/>
-                        <path d="M48 20 C 51.5 27 52.5 30 51.5 34 C 51 39 50 43 48 47 C 46 43 45 39 44.5 34 C 43.5 30 44.5 27 48 20 Z"/>
-                        <path d="M27 66 L27 57.5 Q27 56 28.5 56 L37 56 L40 50.5 Q41 49 42.5 49 L67 49 Q68.5 49 68.5 50.5 L68.5 66 Q68.5 67.5 67 67.5 L28.5 67.5 Q27 67.5 27 66 Z"/>
-                    </g>
-                    <circle cx="40" cy="68" r="4.3" fill="#2FBF71"/><circle cx="40" cy="68" r="1.9" fill="#0B1620"/>
-                    <circle cx="60" cy="68" r="4.3" fill="#2FBF71"/><circle cx="60" cy="68" r="1.9" fill="#0B1620"/>
-                </svg>
-            </span>
+        <a class="hdr__marca" href="login.html">
+            <span data-logo></span>
             <span>Cathartes</span>
         </a>
+        <span data-avatar></span>
+    </header>
+</template>
 
+<!-- ------------------------------------------------------------ VECINO ------ -->
+<template id="tpl-header-vecino">
+    <header class="hdr">
+        <a class="hdr__marca" href="inicio.html">
+            <span data-logo></span>
+            <span>Cathartes</span>
+        </a>
         <nav class="hdr__nav">
             <a class="hdr__link" href="inicio.html"          data-nav="inicio">Inicio</a>
             <a class="hdr__link" href="reportar.html"        data-nav="reportar">Reportar</a>
@@ -35,37 +95,67 @@
             <a class="hdr__link" href="mapa.html"            data-nav="mapa">Mapa</a>
             <a class="hdr__link" href="recompensas.html"     data-nav="recompensas">Recompensas</a>
         </nav>
+        <span data-avatar></span>
+    </header>
+</template>
 
-        <div class="hdr__derecha">
-            <span class="badge-puntos" data-badge hidden title="Puntos disponibles">
-                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21.4l1.4-6.8L2.2 9l6.9-.7z"/></svg>
-                <span><b data-campo="saldo">0</b> pts</span>
-            </span>
+<!-- ---------------------------------------------------------- CUADRILLA ----- -->
+<template id="tpl-header-cuadrilla">
+    <header class="hdr">
+        <a class="hdr__marca" href="cuadrilla.html">
+            <span data-logo></span>
+            <span>Cathartes</span>
+        </a>
+        <nav class="hdr__nav">
+            <a class="hdr__link" href="cuadrilla.html"                 data-nav="inicio">Inicio</a>
+            <a class="hdr__link" href="cuadrilla-rutas.html"           data-nav="rutas">Mis rutas</a>
+            <a class="hdr__link" href="cuadrilla-intervenciones.html"  data-nav="intervenciones">Intervenciones</a>
+            <a class="hdr__link" href="cuadrilla-mapa.html"            data-nav="mapa">Mapa</a>
+        </nav>
+        <span data-avatar></span>
+    </header>
+</template>
 
-            <div class="avatar">
-                <button class="avatar__btn" type="button" data-avatar-btn aria-haspopup="true" aria-expanded="false" data-campo="iniciales">JP</button>
-                <div class="avatar__menu" data-avatar-menu hidden>
-                    <div class="avatar__nombre">
-                        <b data-campo="nombre">Nombre del usuario</b>
-                        <span data-campo="rol">rol</span>
-                    </div>
-                    <a class="avatar__item" href="perfil.html">Mi perfil</a>
-                    <button class="avatar__item avatar__item--peligro" type="button" data-accion="logout">Cerrar sesión</button>
-                </div>
-            </div>
-        </div>
+<!-- ----------------------------------------------------------- OPERARIO ----- -->
+<template id="tpl-header-operario">
+    <header class="hdr">
+        <a class="hdr__marca" href="operario.html">
+            <span data-logo></span>
+            <span>Cathartes</span>
+        </a>
+        <nav class="hdr__nav">
+            <a class="hdr__link" href="operario.html"              data-nav="inicio">Inicio</a>
+            <a class="hdr__link" href="operario-instalacion.html"  data-nav="instalacion">Mi instalación</a>
+            <a class="hdr__link" href="operario-informes.html"     data-nav="informes">Informes</a>
+        </nav>
+        <span data-avatar></span>
     </header>
 </template>
 
 <template id="tpl-footer">
     <footer class="ftr">
         <div class="ftr__grid">
-            <div class="ftr__col">
+            <!-- Columna «Sistema»: una por rol, para no mandar a una cuadrilla a
+                 pantallas de vecino (le darían 403). El resto del footer es común. -->
+            <div class="ftr__col" data-rol="vecino" hidden>
                 <h4>Sistema</h4>
                 <a href="inicio.html">Inicio</a>
                 <a href="reportar.html">Reportar incidencia</a>
                 <a href="mis-incidencias.html">Mis incidencias</a>
                 <a href="recompensas.html">Recompensas</a>
+            </div>
+            <div class="ftr__col" data-rol="cuadrilla" hidden>
+                <h4>Sistema</h4>
+                <a href="cuadrilla.html">Inicio</a>
+                <a href="cuadrilla-rutas.html">Mis rutas</a>
+                <a href="cuadrilla-intervenciones.html">Intervenciones</a>
+                <a href="cuadrilla-mapa.html">Mapa operativo</a>
+            </div>
+            <div class="ftr__col" data-rol="operario" hidden>
+                <h4>Sistema</h4>
+                <a href="operario.html">Inicio</a>
+                <a href="operario-instalacion.html">Mi instalación</a>
+                <a href="operario-informes.html">Informes</a>
             </div>
             <div class="ftr__col">
                 <h4>Información</h4>

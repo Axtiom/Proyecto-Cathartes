@@ -66,6 +66,13 @@
 
     var K_FLASH = 'cathartes.flash';
 
+    // Timeout de cada request, en ms. `fetch` NO tiene timeout propio: si el servidor
+    // acepta la conexión y nunca contesta, la promesa no se resuelve nunca y la
+    // pantalla se queda en "Cargando…" para siempre — se ve como si estuviera rota.
+    // Con esto, un request colgado termina como status 0 y cada pantalla cae a su
+    // estado de error, que ya está escrito en el HTML.
+    var TIMEOUT_MS = 12000;
+
     // -------------------------------------------------------------- Auth ----
     // Fase 3.95: la sesión vive en una cookie HttpOnly firmada que setea la API al
     // validar el 2FA. El JS NO la puede leer (esa es la gracia: resiste XSS mejor
@@ -105,11 +112,25 @@
             }
         }
 
+        // Corta el request si el servidor no contesta a tiempo. AbortController hace
+        // que fetch rechace, y el catch de abajo lo convierte en status 0 — el mismo
+        // camino que un fallo de red, así que las pantallas no necesitan un caso
+        // aparte para "colgado".
+        var reloj = null;
+        if (typeof AbortController !== 'undefined') {
+            var ctrl = new AbortController();
+            opts.signal = ctrl.signal;
+            reloj = setTimeout(function () { ctrl.abort(); }, TIMEOUT_MS);
+        }
+        var listo = function () { if (reloj) clearTimeout(reloj); };
+
         return fetch(url, opts).then(function (resp) {
+            listo();
             return resp.json()
                 .then(function (data) { return { status: resp.status, data: data }; })
                 .catch(function () { return { status: resp.status, data: null }; });
         }).catch(function () {
+            listo();
             return { status: 0, data: null };
         });
     }

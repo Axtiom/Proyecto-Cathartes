@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     Pantalla C3: INTERVENCIONES (cuadrilla). Maestro-detalle.
+     Datos: API Recolección — GET /cuadrilla/intervenciones, GET /cuadrilla/intervencion?id=N,
+            GET /cuadrilla/repuestos, POST /cuadrilla/contenedor/estado,
+            POST /cuadrilla/intervencion/repuestos, POST /cuadrilla/intervencion/finalizar
+     JS que la acompaña: js/pantallas/cuadrilla-intervenciones.js
+
+     Es la pantalla que CIERRA el ciclo de vida de la incidencia: acá se actualiza el
+     estado del contenedor, se registran los repuestos usados y se marca la tarea
+     como finalizada (`intervencion.tarea_finalizada='si'` + `fecha_fin`).
+
+     REPUESTOS — dónde vive el dato:
+       `repuestos` (ID, nombre, tipo, cantidad) es el CATÁLOGO de inventario.
+       `usa` (ID_intervencion, ID_repuesto, cuantos) es lo que esta intervención
+       consumió. Ese es el respaldo real de «repuestos utilizados»; el catálogo solo
+       llena el <select>. Hoy `repuestos` está vacía, así que la pantalla muestra su
+       estado vacío — es lo correcto, no un defecto.
+
+     Acepta ?id=N para abrir una intervención directamente (link desde el inicio).
+============================================================================= -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intervenciones · Cuadrilla · Cathartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="app">
+    <div data-shell-header></div>
+
+    <main class="app-main">
+        <h1 class="app-main__titulo">Intervenciones</h1>
+        <p class="app-main__sub">Las incidencias asignadas a tu cuadrilla. Elegí una de la lista para trabajarla.</p>
+
+        <div class="chips" id="chips" style="margin:18px 0 16px">
+            <button type="button" class="chip chip--activo" data-filtro="abiertas">Abiertas</button>
+            <button type="button" class="chip" data-filtro="finalizadas">Finalizadas</button>
+            <button type="button" class="chip" data-filtro="todas">Todas</button>
+        </div>
+
+        <div class="maestro-grid">
+            <!-- MAESTRO: lista de intervenciones -->
+            <section id="reg-lista" data-region>
+                <div class="lista" id="lista-intervenciones" data-contenido hidden></div>
+                <p class="estado" data-estado="cargando">Cargando intervenciones…</p>
+                <div class="vacio" data-estado="vacio" hidden>
+                    <p class="vacio__titulo">Sin intervenciones</p>
+                    <p class="vacio__texto">No hay intervenciones con ese filtro. Las asigna un administrador desde el backoffice.</p>
+                </div>
+                <div class="vacio vacio--error" data-estado="error" hidden>
+                    <p class="vacio__titulo">No se pudieron cargar</p>
+                    <p class="vacio__texto">La API de Recolección no respondió.</p>
+                </div>
+            </section>
+
+            <!-- DETALLE de la intervención elegida -->
+            <section id="reg-detalle" data-region>
+                <div data-contenido hidden>
+                    <div class="panel">
+                        <h2 class="seccion__titulo" style="margin-top:0">
+                            Incidencia #<span data-campo="id_incidencia">0</span>
+                            <span class="badge badge--desbordado" data-campo="estado_incidencia">en curso</span>
+                        </h2>
+                        <div class="dato-linea"><span>Tipo de reporte</span><span data-campo="tipo">desbordado</span></div>
+                        <div class="dato-linea"><span>Contenedor</span><span data-campo="contenedor">#0 · Av. Rivera 3245</span></div>
+                        <div class="dato-linea"><span>Estado actual del contenedor</span><span class="badge badge--desbordado" data-campo="estado_contenedor">desbordado</span></div>
+                        <div class="dato-linea"><span>Reportado por</span><span data-campo="vecino">—</span></div>
+                        <div class="dato-linea"><span>Intervención iniciada</span><span data-campo="fecha_inicio">—</span></div>
+                        <div class="dato-linea"><span>Descripción del vecino</span><span data-campo="descripcion">—</span></div>
+                    </div>
+
+                    <!-- 1. Nuevo estado del contenedor -->
+                    <div class="panel" style="margin-top:16px">
+                        <h2 class="seccion__titulo" style="margin-top:0">Actualizar el estado del contenedor</h2>
+                        <p class="campo-app__ayuda" style="margin:0 0 12px">Lo que dejaste al intervenir. Se guarda en el contenedor, no en la incidencia.</p>
+                        <form class="form-app" data-form="estado">
+                            <div class="campo-app">
+                                <label for="sel-estado">Nuevo estado</label>
+                                <select id="sel-estado" name="estado">
+                                    <option value="funcional">Funcional</option>
+                                    <option value="desbordado">Desbordado</option>
+                                    <option value="no funcional">No funcional</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="cta" style="align-self:flex-start">Guardar estado</button>
+                        </form>
+                    </div>
+
+                    <!-- 2. Repuestos utilizados -->
+                    <div class="panel" style="margin-top:16px" id="reg-repuestos" data-region>
+                        <h2 class="seccion__titulo" style="margin-top:0">Repuestos utilizados</h2>
+                        <p class="campo-app__ayuda" style="margin:0 0 12px">Lo que consumió esta intervención. Sale del inventario de repuestos.</p>
+
+                        <div class="lista" data-usados hidden></div>
+                        <p class="estado" data-sin-usados>Todavía no registraste repuestos en esta intervención.</p>
+
+                        <form class="form-app" data-form="repuesto" style="margin-top:14px" data-contenido hidden>
+                            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+                                <div class="campo-app" style="flex:1 1 220px">
+                                    <label for="sel-repuesto">Repuesto</label>
+                                    <select id="sel-repuesto" name="id_repuesto" required></select>
+                                </div>
+                                <div class="campo-app" style="flex:0 0 110px">
+                                    <label for="inp-cuantos">Cantidad</label>
+                                    <input type="number" id="inp-cuantos" name="cuantos" min="1" value="1" required>
+                                </div>
+                                <button type="submit" class="cta">Agregar</button>
+                            </div>
+                        </form>
+                        <p class="estado" data-estado="cargando">Cargando el inventario…</p>
+                        <div class="vacio" data-estado="vacio" hidden>
+                            <p class="vacio__titulo">Sin repuestos en inventario</p>
+                            <p class="vacio__texto">No hay repuestos cargados en el sistema, así que no hay nada para registrar.</p>
+                        </div>
+                        <div class="vacio vacio--error" data-estado="error" hidden>
+                            <p class="vacio__titulo">No se pudo cargar el inventario</p>
+                            <p class="vacio__texto">La API de Recolección no respondió.</p>
+                        </div>
+                    </div>
+
+                    <!-- 3. Cierre -->
+                    <div class="panel" style="margin-top:16px">
+                        <h2 class="seccion__titulo" style="margin-top:0">Cierre de la tarea</h2>
+                        <p class="campo-app__ayuda" style="margin:0 0 12px">
+                            Marcar la tarea como finalizada registra la fecha de fin. Es lo que cierra el
+                            ciclo de la incidencia y lo que alimenta el informe de rendimiento.
+                        </p>
+                        <div class="dato-linea"><span>Tarea finalizada</span><span class="badge badge--desbordado" data-campo="tarea_finalizada">no</span></div>
+                        <div class="dato-linea" data-fin hidden><span>Fecha de fin</span><span data-campo="fecha_fin">—</span></div>
+                        <button type="button" class="cta" style="margin-top:14px" data-accion="finalizar">Marcar tarea finalizada</button>
+                        <p class="estado" data-ya-finalizada hidden>Esta intervención ya está cerrada.</p>
+                    </div>
+                </div>
+
+                <p class="estado" data-estado="cargando" hidden>Cargando la intervención…</p>
+                <div class="vacio" data-estado="vacio">
+                    <p class="vacio__titulo">Elegí una intervención</p>
+                    <p class="vacio__texto">Tocá una de la lista para ver el detalle y trabajarla.</p>
+                </div>
+                <div class="vacio vacio--error" data-estado="error" hidden>
+                    <p class="vacio__titulo">No se pudo cargar el detalle</p>
+                    <p class="vacio__texto">La API de Recolección no respondió.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <!-- Molde de un ítem de la lista maestra. -->
+    <template id="tpl-item">
+        <button type="button" class="lista__item lista__item--boton">
+            <div>
+                <div class="principal" data-campo="titulo">#0 · desbordado</div>
+                <div class="secundario" data-campo="detalle">01/01/2026 · Av. Rivera 3245, Buceo</div>
+            </div>
+            <span class="badge badge--desbordado" data-campo="estado">abierta</span>
+        </button>
+    </template>
+
+    <!-- Molde de una línea de repuesto usado. -->
+    <template id="tpl-usado">
+        <div class="lista__item">
+            <div>
+                <div class="principal" data-campo="nombre">Repuesto</div>
+                <div class="secundario" data-campo="detalle">tipo</div>
+            </div>
+            <span class="badge badge--en-stock" data-campo="cuantos">1</span>
+        </div>
+    </template>
+
+    <!-- Molde de una opción del select de repuestos (excepción permitida: <option>
+         poblado desde datos, no estructura). -->
+    <template id="tpl-opcion">
+        <option value=""></option>
+    </template>
+
+    <script src="js/api.js"></script>
+    <script src="js/componentes/toast.js"></script>
+    <script src="js/pantallas/_comun.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/guardia.js"></script>
+    <script src="js/pantallas/cuadrilla-intervenciones.js"></script>
+</body>
+</html>

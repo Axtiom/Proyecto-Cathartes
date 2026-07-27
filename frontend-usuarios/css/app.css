@@ -525,3 +525,52 @@ a.lista__item:hover { background: var(--superficie2); }
     .app-main { padding: 20px 16px 40px; }
     .detalle-grid { grid-template-columns: 1fr; }
 }
+
+/* ============================================================================
+   FASE 3 — Cuadrilla y Operario
+   Componentes que las 7 pantallas nuevas necesitan y que no existían. Se agregan;
+   no se reescribe nada de arriba. Mismos tokens (nada de colores nuevos).
+============================================================================ */
+
+/* Estados de una región de datos (cargando / vacío / error). El texto de los tres
+   vive en el HTML de cada pantalla; _comun.js solo muestra uno. */
+.estado { font-size: 13px; color: var(--texto-tenue); padding: 14px 0; margin: 0; }
+.vacio--error .vacio__titulo { color: var(--rojo); }
+
+/* Barra de progreso (avance del recorrido de una ruta). El ancho es dato de la
+   API y va por style inline: es un valor, no un estilo. */
+.progreso { height: 8px; border-radius: 4px; background: var(--superficie2); overflow: hidden; margin-top: 8px; }
+.progreso__llena { display: block; height: 100%; background: var(--verde); border-radius: 4px; }
+.progreso__txt { display: flex; justify-content: space-between; font-size: 12px; color: var(--texto-tenue); margin-top: 6px; }
+
+/* Maestro-detalle (Intervenciones de la cuadrilla): lista a la izquierda, detalle
+   a la derecha. En pantalla angosta se apilan. */
+.maestro-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; align-items: start; }
+.lista__item--activo { background: var(--superficie2); border-left: 3px solid var(--verde); }
+.lista__item--boton { width: 100%; text-align: left; background: none; border: none; font: inherit; color: inherit; cursor: pointer; }
+
+/* Chips de contenedores de una ruta (C2). Reusa el look de .chip pero sin ser
+   filtro: no son clickeables. */
+.chip--dato { cursor: default; }
+.chip--dato:hover { background: var(--superficie2); }
+
+/* Nota de «sin respaldo en el modelo»: pantallas que existen en la maqueta pero
+   cuyo dato no tiene dónde persistirse todavía (ver el .html de cada una). */
+.nota-modelo {
+    display: block; font-size: 12px; line-height: 1.5;
+    color: var(--ambar); background: rgba(245, 181, 74, .08);
+    border: 1px solid rgba(245, 181, 74, .28); border-radius: var(--radio-sm);
+    padding: 10px 12px; margin: 10px 0 0;
+}
+
+/* Tarjeta de ruta (C2) */
+.ruta-tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px 18px; }
+.ruta-tarjeta__cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ruta-tarjeta__tit { font-family: var(--fuente-titulo); font-size: 20px; margin: 0; }
+.ruta-tarjeta__meta { font-size: 13px; color: var(--texto-tenue); margin: 2px 0 0; }
+.rutas-grid { display: grid; gap: 16px; }
+
+@media (max-width: 900px) {
+    .maestro-grid { grid-template-columns: 1fr; }
+    .mapa-grid { grid-template-columns: 1fr; }
+}
