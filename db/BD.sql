@@ -14,6 +14,91 @@
 --                el usuario padre)
 --    RESTRICT -> todo el resto. El sistema no borra: marca de baja
 --                mediante los campos 'estado'.
+--
+--  ESTE ARCHIVO ES LA FUENTE DE VERDAD DEL ESQUEMA.
+--    Ya incluye TODAS las adiciones hechas durante el desarrollo: no hay
+--    scripts de migracion aparte que haya que correr despues. Para levantar
+--    la base desde cero alcanza con:
+--        1) db/BD.sql    (estructura + trigger)   <- este archivo
+--        2) db/seed.sql  (datos de prueba)
+--    Verificado el 2026-07-27 contra la base viva: 22 tablas, mismas
+--    columnas, mismo trigger.
+-- =====================================================================
+--  REGISTRO DE ADICIONES AL MER
+--  ---------------------------------------------------------------------
+--  El MER esta congelado: no se inventan tablas ni columnas. Lo que sigue
+--  son las unicas excepciones, cada una autorizada explicitamente por Juan
+--  y ya aplicada mas abajo en este mismo archivo. Se listan aca para que el
+--  MER, el pasaje a tablas y el diccionario de datos se puedan actualizar
+--  sin tener que reconstruir la historia desde los commits.
+--
+--  2026-07-23 (Fase 2)   incidencia_historial.foto VARCHAR(255) NULL
+--      RF-18 exige foto obligatoria al reportar y el MER no tenia donde
+--      guardarla. Guarda el nombre/ruta relativa; los bytes viven en el
+--      disco de la API (storage/uploads/incidencias/), no en la base.
+--
+--  2026-07-23 (Fase 2)   TRIGGER trg_incidencia_valida_puntos
+--      Acredita los 150 puntos fijos al pasar validada de 'no' a 'si'.
+--      Se eligio trigger y no logica de aplicacion para que la regla valga
+--      tambien cuando el admin valida por SQL directo. Ver BLOQUE 8.
+--
+--  2026-07-23 (Fase 2.5) contenedor.latitud/longitud  DECIMAL(9,6) NULL
+--                        instalacion.latitud/longitud DECIMAL(9,6) NULL
+--      Modulo de mapa (Leaflet/OSM). Antes las coordenadas vivian embebidas
+--      en el texto de 'ubicacion'; se migraron a columnas propias.
+--
+--  2026-07-24 (Fase 3.9) ruta.zona     VARCHAR(50) NOT NULL
+--                        ruta.estado   ENUM('activa','inactiva')
+--      zona habilita el filtro por zona en Incidencias del backoffice;
+--      estado permite sacar una ruta de operacion sin borrarla.
+--
+--  2026-07-24 (Fase 3.9) camion.fecha_baja  DATETIME     NULL
+--                        camion.motivo_baja VARCHAR(255) NULL
+--      Analogos exactos a los de 'contenedor': la baja no borra, registra.
+--
+--  2026-07-24 (Fase 3.9) cuadrilla.estado ENUM('en servicio','fuera de servicio')
+--      Eje OPERATIVO, distinto de usuario.estado (activo/no activo), que es
+--      el estado de CUENTA. Son dos cosas separadas a proposito.
+--
+--  NO es una adicion: la tabla 'toma' (cuadrilla toma ruta) YA EXISTIA en el
+--  DDL con PK (ID_cuadrilla, ID_ruta, fecha). Un documento de la Fase 3.9
+--  pedia crearla; el DDL gana. Ver BUG-007 en BUGS.md.
+--
+--  Nota de nomenclatura: la columna de contrasena se llama 'contrasena' (sin
+--  ñ) en el DDL, mientras que el MER/diccionario la nombran con ñ. Es una
+--  discrepancia deliberada tras BUG-003 (la ñ se corrompia al importar el
+--  dump). Ningun identificador de la base lleva ñ ni acentos.
+-- =====================================================================
+--  DECISIONES DE "NO AGREGAR" (confirmadas por Juan - NO revertir)
+--  ---------------------------------------------------------------------
+--  Cosas que se evaluaron y se decidio NO poner en el esquema. Se dejan
+--  escritas para que no vuelvan a proponerse en cada fase:
+--
+--    usuario.apellido      -> nombre y apellido van concatenados en
+--                             usuario.nombre. El alta pide los dos campos y
+--                             los une al insertar.
+--    cuadrilla.nombre      -> usuario.nombre ES el nombre del equipo
+--                             (ej. 'Cuadrilla Alfa'). La cuadrilla es un
+--                             subtipo de Usuario y comparte UNA cuenta.
+--    cuadrilla.integrantes -> la cuadrilla es una cuenta compartida, no un
+--                             conjunto de personas.
+--    recompensa.activo     -> "recompensa activa" = existe en el catalogo.
+--                             No hay flag de activacion: si no se la quiere
+--                             ofrecer, se saca del catalogo (y solo se puede
+--                             si nunca se canjeo: 'canje' la referencia con
+--                             RESTRICT).
+--    2do tipo en instalacion -> el tipo (vertedero / centro de acopio) ya
+--                             determina el residuo que maneja; el residuo es
+--                             una etiqueta derivada en la vista, no columna.
+--
+--  Pendientes conocidos (requieren autorizacion para tocar el esquema):
+--    - Cierre de una ruta recorrida: 'toma' registra cuando la cuadrilla toma
+--      la ruta, no cuando la termina. Haria falta una columna de cierre o una
+--      tabla aparte. El boton correspondiente esta deshabilitado en el front.
+--    - Historico de ocupacion de instalaciones: 'instalacion.ocupacion_actual'
+--      es un unico valor que se sobrescribe. Sin una tabla de mediciones
+--      (fecha + ocupacion + instalacion) no hay serie mensual posible, y por
+--      eso la pantalla de Informes del operario esta vacia a proposito.
 -- =====================================================================
 
 DROP DATABASE IF EXISTS cathartes;
