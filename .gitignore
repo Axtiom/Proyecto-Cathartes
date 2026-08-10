@@ -31,9 +31,15 @@ desktop.ini
 /tmp/
 /cache/
 
-# --- Uploads de usuarios (fotos de incidencias, bytes en disco no en git) ---
-# La API recrea el directorio en runtime (mkdir); no se versionan las fotos.
-**/storage/uploads/
+# --- Almacen: nada de lo que se genera en runtime va al repo ---
+# Fotos de incidencias: el controlador recrea el directorio con mkdir, y los
+# bytes viven en disco, no en git.
+almacen/subidas/
+
+# Log del stub de correo: guarda los mails que el sistema "manda" cuando
+# MAIL_DRIVER=stub, y ahi adentro van los CODIGOS DE 2FA Y DE RECUPERACION EN
+# CLARO. No se commitea nunca.
+almacen/mail.log
 
 # --- Archivos de trabajo internos (NO suben al equipo) ---
 # Por nombre exacto anclado a la raíz: NO usar *.md (CREDITS.md, BUGS.md y
@@ -41,6 +47,7 @@ desktop.ini
 /CLAUDE.md
 /Instrucciones temporales.md
 /nuevas instrucciones.md
+/MAPA.md
 
 # --- Artefactos redundantes que no van al repo ---
 /Cathartes_codigo_fuente.zip
