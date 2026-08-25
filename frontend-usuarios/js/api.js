@@ -18,8 +18,9 @@
  *     - Secure : según entorno (.env COOKIE_SECURE; true en prod HTTPS).
  *     - Expiración según "Recordarme": tildado -> 90 días; sin tildar -> cookie de
  *       sesión de navegador. Sin timeout por inactividad.
- *   La setea la API de Usuarios al validar el 2FA. Se abandonó el guardado en
- *   localStorage/sessionStorage con header Bearer.
+ *   La setea la API al validar usuario/contraseña (login de un solo paso, sin
+ *   verificación en dos pasos). Se abandonó el guardado en localStorage/
+ *   sessionStorage con header Bearer.
  *
  * POR QUÉ EL CAMBIO
  *   Un token en Web Storage es legible por cualquier JS del origen: ante un XSS,
@@ -44,24 +45,23 @@
  *
  * CONFIG — equivalente estático del .env:
  *   Sin PHP no hay .env. El único punto a tocar entre entornos (local ->
- *   producción) es CONFIG.apiUsuarios. Nada de URLs hardcodeadas dispersas.
+ *   producción) es CONFIG.apiBase. Nada de URLs hardcodeadas (ni host ni
+ *   protocolo): es una ruta RELATIVA a este archivo, así que sirve igual
+ *   sirviendo el proyecto en cualquier subcarpeta o dominio.
  * ==========================================================================*/
 (function () {
     'use strict';
 
+    // Las 3 APIs que existían por separado (usuarios, gestión, recolección) se
+    // unificaron en una sola app (cathartes-app), que vive como carpeta hermana
+    // de este frontend. Las tres apuntan al mismo lugar: la ruta que las
+    // distingue ya viene en cada endpoint (/login, /vecino/..., /cuadrilla/...).
+    var API_BASE = '../cathartes-app/public/api';
+
     var CONFIG = {
-        // Bases de las tres APIs. Ajustar por entorno (equivalente al .env). Mismo
-        // origen que el frontend (Apache :80) -> sin CORS. El Router de cada API
-        // recorta el prefijo del subdirectorio solo, así que estas URLs sirven
-        // igual en local (subcarpeta) que en el vhost raíz de producción.
-        //
-        // El frontend SIEMPRE habla con una API por fetch: no hay acceso a base
-        // ni "driver local" acá. Que una API sirva datos reales o todavía no
-        // exista es problema del lado servidor, no de este cliente. El contrato
-        // de cada endpoint está en docs/contratos-api.md.
-        apiUsuarios:    'http://localhost/sigeru/api-usuarios/public',
-        apiGestion:     'http://localhost/sigeru/api-gestion/public',
-        apiRecoleccion: 'http://localhost/sigeru/api-recoleccion/public'
+        apiUsuarios:    API_BASE,
+        apiGestion:     API_BASE,
+        apiRecoleccion: API_BASE
     };
 
     var K_FLASH = 'cathartes.flash';
@@ -75,8 +75,8 @@
 
     // -------------------------------------------------------------- Auth ----
     // Fase 3.95: la sesión vive en una cookie HttpOnly firmada que setea la API al
-    // validar el 2FA. El JS NO la puede leer (esa es la gracia: resiste XSS mejor
-    // que localStorage). Ya no se guarda token ni preauth en storage. "Estar
+    // validar usuario/contraseña. El JS NO la puede leer (esa es la gracia: resiste
+    // XSS mejor que localStorage). Ya no se guarda token en storage. "Estar
     // logueado" se comprueba pidiendo GET /yo (la cookie viaja sola). Acá solo
     // quedan los mensajes flash (UX de una sola lectura), que no son secretos.
     var Auth = {

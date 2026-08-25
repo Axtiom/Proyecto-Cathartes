@@ -1,4 +1,4 @@
-# BUGS.md — Registro de bugs del monorepo SiGeRU / Cathartes
+# BUGS.md — Registro de bugs del monorepo Cathartes
 
 > Documento vivo. Cada bug que se encuentra (en código propio, del equipo, de
 > configuración o de entorno) se anota acá **antes o al momento de arreglarlo**.
@@ -21,7 +21,7 @@
 | BUG-003 | 2026-07-20 | BD / import      | Columna `contraseña` importada como `contrase├▒a`   | crítica   | RESUELTO |
 | BUG-004 | 2026-07-23 | Frontend / CSS   | Cajas `.aviso` con `hidden` se mostraban vacías      | media     | RESUELTO |
 | BUG-005 | 2026-07-23 | APIs / Router    | El Router solo matchea en la raíz del dominio        | alta      | RESUELTO |
-| BUG-006 | 2026-07-23 | Entorno / hosting| Apache servía una copia stale de `htdocs\sigeru`     | alta      | RESUELTO |
+| BUG-006 | 2026-07-23 | Entorno / hosting| Apache servía una copia stale de `htdocs\cathartes`     | alta      | RESUELTO |
 | BUG-007 | 2026-07-24 | BD / documentación| Doc de Fase 3.9 pedía crear `toma`, pero ya existía | media     | RESUELTO |
 | BUG-008 | 2026-07-24 | Backoffice / PHP | `extract(EXTR_SKIP)` con clave `datos` no llegaba a la vista | media     | RESUELTO |
 | BUG-009 | 2026-07-24 | Backoffice / seguridad | El admin escribe la contraseña del usuario que crea | baja      | ABIERTO |
@@ -226,14 +226,14 @@ controlador JS les inyecta texto por `textContent`.
 - **Estado:** RESUELTO
 - **Detectado en:** cablear el Frontend estático contra la API real por Apache.
 
-**Síntoma.** `GET http://localhost/sigeru/api-usuarios/public/health` devolvía el
+**Síntoma.** `GET http://localhost/cathartes/api-usuarios/public/health` devolvía el
 404 JSON **de la propia API** (`{"error":"no encontrado"}`), aunque el front
 controller `index.php` sí ejecutaba.
 
 **Causa.** `dispatch()` comparaba el path exacto de las rutas (`/health`,
 `/login`, ...) contra el `REQUEST_URI` **completo**. Bajo Apache en subcarpeta,
 ese path incluye el prefijo del subdirectorio
-(`/sigeru/api-usuarios/public/health`), que nunca es igual a `/health`. El Router
+(`/cathartes/api-usuarios/public/health`), que nunca es igual a `/health`. El Router
 asumía estar servido en la raíz del dominio, como pasa con
 `php -S host:port -t public` (por eso ahí sí andaba).
 
@@ -263,7 +263,7 @@ completa (registro → 403 → aprobar → login → 2FA → `/yo` → kill-swit
 
 ---
 
-### BUG-006 — Apache servía una copia stale de `htdocs\sigeru`, no el working tree
+### BUG-006 — Apache servía una copia stale de `htdocs\cathartes`, no el working tree
 
 - **Fecha:** 2026-07-23
 - **Área:** Entorno / hosting local (XAMPP `htdocs`)
@@ -273,11 +273,11 @@ completa (registro → 403 → aprobar → login → 2FA → `/yo` → kill-swit
 - **Detectado en:** diagnóstico de por qué el fix del Router y la reestructuración
   no aparecían por Apache.
 
-**Síntoma.** Los cambios hechos en `D:\sigeru` no se reflejaban al servir por
+**Síntoma.** Los cambios hechos en `D:\cathartes` no se reflejaban al servir por
 Apache: la API y la landing devolvían versiones viejas; el frontend apuntaba a
 `http://127.0.0.1:8081`, un puerto donde no escuchaba nada (Apache está en :80).
 
-**Causa.** `C:\Xampp\htdocs\sigeru` **no era un link** a `D:\sigeru`: era una
+**Causa.** `C:\Xampp\htdocs\cathartes` **no era un link** a `D:\cathartes`: era una
 **copia manual desincronizada** (carpeta común, con fechas mezcladas 20–22 jul).
 Apache servía esa copia, ajena al working tree y a git.
 
@@ -288,18 +288,18 @@ tenían efecto". Cualquier flujo por navegador usaba código stale.
 junction al working tree:
 
 ```
-ren       C:\Xampp\htdocs\sigeru  sigeru-stale-20jul     (backup reversible)
-mklink /J C:\Xampp\htdocs\sigeru  D:\sigeru              (sin admin)
+ren       C:\Xampp\htdocs\cathartes  cathartes-stale-20jul     (backup reversible)
+mklink /J C:\Xampp\htdocs\cathartes  D:\cathartes              (sin admin)
 ```
 
-Una sola fuente de verdad: lo que se edita en `D:\sigeru` se sirve al instante.
+Una sola fuente de verdad: lo que se edita en `D:\cathartes` se sirve al instante.
 Además el frontend pasó a apuntar a la URL real de Apache
-(`http://localhost/sigeru/api-usuarios/public`), mismo origen que el frontend, lo
+(`http://localhost/cathartes/api-usuarios/public`), mismo origen que el frontend, lo
 que además elimina la necesidad de CORS. (El `ren` requirió cerrar antes una
 ventana de Explorer y una pestaña de VS Code — `BD.sql` de la copia — que tenían
 la carpeta tomada.)
 
-**Verificación.** Junction confirmado (`LinkType: Junction`, `Target: D:\sigeru`);
+**Verificación.** Junction confirmado (`LinkType: Junction`, `Target: D:\cathartes`);
 Apache sirve el código nuevo (landing con `data-stat`, login con `data-page`,
 Router con `normalizarPath`); cadena e2e login→2FA→`/yo` OK.
 
@@ -523,7 +523,7 @@ circunferencias de las ruedas.
 ```
 Fatal error: Uncaught PDOException: SQLSTATE[HY000]: General error: 1366
 Incorrect string value: '\x97 Cord...' for column 'nombre' at row 1
-in D:\sigeru\backoffice\app\Models\Ruta.php:151
+in D:\cathartes\backoffice\app\Models\Ruta.php:151
 ```
 
 **Causa.** El front controller no tenía manejador de excepciones y PHP quedaba con
@@ -567,7 +567,7 @@ en un 500 no se puede asumir estado sano). El detalle solo se imprime con
 
 **Verificación.** Mismo POST con bytes inválidos: responde `500` con la página
 genérica («Algo falló del lado del servidor»); `grep` del HTML servido no encuentra
-`Fatal error`, ni `Uncaught`, ni `D:\sigeru`. El detalle queda en el log de PHP.
+`Fatal error`, ni `Uncaught`, ni `D:\cathartes`. El detalle queda en el log de PHP.
 
 **Pendiente relacionado.** Las APIs (`api-usuarios`, `api-gestion`,
 `api-recoleccion`) hay que revisarlas por el mismo motivo: son JSON, así que les

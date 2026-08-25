@@ -1,5 +1,5 @@
 -- =====================================================================
---  Cathartes - Sistema de Gestion de Residuos Urbanos (SiGeRU)
+--  Cathartes - Sistema de Gestion de Residuos Urbanos (Cathartes)
 --  DDL de creacion de la base de datos y sus tablas
 --
 --  Proyecto de Pasaje de Grado 2026 - Axtiom

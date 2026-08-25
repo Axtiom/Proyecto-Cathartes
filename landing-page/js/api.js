@@ -1,5 +1,5 @@
 /* ============================================================================
- * api.js — Cliente HTTP de la Landing Page (Cathartes / SiGeRU)
+ * api.js — Cliente HTTP de la Landing Page (Cathartes)
  * ----------------------------------------------------------------------------
  * La Landing es un frontend estático (HTML5 + CSS + JS). No toca la base de
  * datos: TODO dato dinámico lo obtiene consumiendo una API por HTTP (fetch).
@@ -12,16 +12,17 @@
  *
  * CONFIG — equivalente estático del .env:
  *   Al no haber PHP, no hay .env. El único punto a cambiar entre entornos
- *   (local -> producción) es CONFIG.apiGestion. Nada de URLs hardcodeadas
- *   repartidas por el código: se centralizan acá.
+ *   (local -> producción) es CONFIG.apiGestion. Es una ruta RELATIVA a este
+ *   archivo (nada de host/protocolo hardcodeado): apunta a la app unificada
+ *   (cathartes-app), que vive como carpeta hermana de esta landing.
  * ==========================================================================*/
 (function () {
     'use strict';
 
     var CONFIG = {
-        // Base de la API de Gestión (estadísticas y contenedores públicos).
-        // Mismo origen que la landing bajo Apache -> sin CORS. Ajustar por entorno.
-        apiGestion: 'http://localhost/sigeru/api-gestion/public'
+        // Antes era la API de Gestión aparte; ahora es la app unificada
+        // (estadísticas y contenedores públicos siguen bajo /api/...).
+        apiGestion: '../cathartes-app/public/api'
     };
 
     /**
