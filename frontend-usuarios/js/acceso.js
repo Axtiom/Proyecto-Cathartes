@@ -7,6 +7,9 @@
  * Enrutado por <body data-page="...">. Cada POST llama a la API y interpreta el
  * JSON, igual que hacía el controlador PHP.
  *
+ * Login de un solo paso: usuario y contraseña alcanzan para abrir sesión (sin
+ * verificación en dos pasos por correo).
+ *
  * REGLA ANTI-XSS (crítica): todo texto que provenga de la API se escribe con
  * textContent, JAMÁS con innerHTML. Ver la decisión de seguridad en api.js.
  * ==========================================================================*/
@@ -49,40 +52,6 @@
         if (panel) panel.hidden = false;
     }
 
-    // ------------------------------------------------------------- OTP ----
-    function initOtp() {
-        var cajas  = Array.prototype.slice.call(document.querySelectorAll('.otp__caja'));
-        var oculto = $('#codigo');
-        if (!cajas.length || !oculto) return;
-
-        function sincronizar() {
-            oculto.value = cajas.map(function (c) { return c.value; }).join('');
-            cajas.forEach(function (c) {
-                c.classList.toggle('otp__caja--lleno', c.value !== '');
-            });
-        }
-        cajas.forEach(function (caja, i) {
-            caja.addEventListener('input', function () {
-                caja.value = caja.value.replace(/\D/g, '').slice(0, 1);
-                if (caja.value && i < cajas.length - 1) cajas[i + 1].focus();
-                sincronizar();
-            });
-            caja.addEventListener('keydown', function (e) {
-                if (e.key === 'Backspace' && !caja.value && i > 0) cajas[i - 1].focus();
-                else if (e.key === 'ArrowLeft' && i > 0) cajas[i - 1].focus();
-                else if (e.key === 'ArrowRight' && i < cajas.length - 1) cajas[i + 1].focus();
-            });
-            caja.addEventListener('paste', function (e) {
-                e.preventDefault();
-                var texto = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
-                for (var j = 0; j < cajas.length; j++) cajas[j].value = texto[j] || '';
-                cajas[Math.min(texto.length, cajas.length - 1)].focus();
-                sincronizar();
-            });
-        });
-        cajas[0].focus();
-    }
-
     // ---------------------------------------------------- controladores ----
     var Pages = {
 
@@ -97,14 +66,13 @@
                 var password = $('#password').value;
                 var recordar = $('#recordar').checked;
 
+                // Login de un solo paso: si las credenciales son válidas, la API
+                // ya deja la cookie de sesión puesta y devuelve a dónde ir según el rol.
                 Api.post('/login', { email: email, password: password, recordar: recordar })
                     .then(function (res) {
                         var d = res.data || {};
-                        if (res.status === 200 && d.need2fa) {
-                            // El preauth quedó en una cookie HttpOnly que setea la API;
-                            // el JS no lo maneja. Solo pasamos a la pantalla del código.
-                            if (d.debug_codigo) Auth.flash('DEV · código 2FA: ' + d.debug_codigo);
-                            window.location.href = 'verificar.html';
+                        if (res.status === 200 && d.ok && d.destino) {
+                            window.location.href = d.destino;
                             return;
                         }
                         mostrarError(d.error || 'No pudimos iniciar sesión.');
@@ -133,29 +101,6 @@
                     mostrarError(d.error || 'No pudimos crear la cuenta.');
                     if (d.campo) setFieldError(String(d.campo), String(d.error || ''));
                 });
-            });
-        },
-
-        verificar: function () {
-            mostrarFlash(Auth.tomarFlash()); // código 2FA en modo DEV
-            initOtp();
-
-            var form = $('#form-principal');
-            if (!form) return;
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                ocultarError();
-                // El preauth va en la cookie HttpOnly; solo mandamos el código. La
-                // API valida, setea la cookie de sesión y devuelve el destino por rol.
-                Api.post('/verificar', { codigo: $('#codigo').value })
-                    .then(function (res) {
-                        var d = res.data || {};
-                        if (res.status === 200 && d.ok && d.destino) {
-                            window.location.href = d.destino;
-                            return;
-                        }
-                        mostrarError(d.error || 'No pudimos verificar el código.');
-                    });
             });
         },
 

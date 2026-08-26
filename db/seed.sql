@@ -1,5 +1,5 @@
 -- =====================================================================
---  Cathartes / SiGeRU — Siembra de datos de prueba
+--  Cathartes — Siembra de datos de prueba
 --  Proyecto de Pasaje de Grado 2026 — Axtiom
 --
 --  Regenerado el 2026-07-27 A PARTIR DE LA BASE VIVA. Incluye tanto la
