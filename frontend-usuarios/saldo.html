@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     Pantalla: MIS PUNTOS (saldo + historial de movimientos).
+     Datos: API de Usuarios — GET /movimientos. El saldo viene en el contexto de
+            sesión (guardia). JS que la acompaña: js/pantallas/saldo.js
+     Regla "el HTML manda": título, leyenda, thead y controles de paginación
+     escritos a mano; las filas se clonan del <template>.
+============================================================================= -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis puntos · Cathartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="app">
+    <div data-shell-header></div>
+
+    <main class="app-main">
+        <a href="recompensas.html" class="seccion__link" style="display:inline-block;margin-bottom:10px">← Recompensas</a>
+        <h1 class="app-main__titulo">Mis puntos</h1>
+        <div class="saldo-grande"><span data-campo="saldo">—</span> pts</div>
+        <p class="app-main__sub" style="margin-top:8px">Ganás 150 puntos por cada incidencia validada. Los puntos no vencen.</p>
+
+        <div class="seccion">
+            <h2 class="seccion__titulo">Movimientos</h2>
+
+            <div class="tabla-wrap" id="tabla-wrap">
+                <table class="tabla">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Concepto</th>
+                            <th>Puntos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-body"></tbody>
+                </table>
+                <div class="paginacion">
+                    <span id="pag-info">Página 1 de 1</span>
+                    <div class="paginacion__btns">
+                        <button type="button" id="pag-prev">Anterior</button>
+                        <button type="button" id="pag-next">Siguiente</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="vacio" id="vacio" hidden>
+                <p class="vacio__titulo">Sin movimientos</p>
+                <p class="vacio__texto">Todavía no tenés movimientos de puntos.</p>
+            </div>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <!-- Molde de una fila de movimiento (valores de muestra, se reemplazan por API). -->
+    <template id="tpl-fila">
+        <tr>
+            <td data-campo="fecha">01/01/2026</td>
+            <td data-campo="concepto">Incidencia validada</td>
+            <td class="mono" data-campo="puntos">+150</td>
+        </tr>
+    </template>
+
+    <script src="js/api.js"></script>
+    <script src="js/componentes/toast.js"></script>
+    <script src="js/pantallas/_comun.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/guardia.js"></script>
+    <script src="js/pantallas/saldo.js"></script>
+</body>
+</html>

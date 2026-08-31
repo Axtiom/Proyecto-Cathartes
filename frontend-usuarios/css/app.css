@@ -1,0 +1,576 @@
+/* ============================================================================
+ * app.css — Shell de la aplicación (header, footer) + componentes base.
+ * ----------------------------------------------------------------------------
+ * Se apoya en los tokens de :root definidos en estilos.css (misma paleta y
+ * tipografías que la landing). NO redefine esos tokens ni reescribe estilos
+ * existentes: es un agregado para las pantallas autenticadas (universos Vecino,
+ * Cuadrilla, Operario, y de referencia para el resto).
+ * ==========================================================================*/
+
+/* ---------- Layout general de una pantalla de app ---------- */
+body.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--base);
+}
+.app-main {
+    flex: 1 0 auto;
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 24px 48px;
+    box-sizing: border-box;
+}
+.app-main__titulo {
+    font-family: var(--fuente-titulo);
+    font-size: 26px;
+    font-weight: 600;
+    margin: 4px 0 2px;
+}
+.app-main__sub { color: var(--texto-tenue); margin: 0 0 24px; }
+
+/* ---------- Header ---------- */
+.hdr {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 24px;
+    height: 62px;
+    background: rgba(18, 26, 46, 0.86);          /* --superficie con alpha */
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--borde);
+}
+.hdr__marca {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--fuente-titulo);
+    font-weight: 600;
+    font-size: 18px;
+    letter-spacing: 0.3px;
+    color: var(--texto);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.hdr__nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+}
+.hdr__link {
+    padding: 8px 12px;
+    border-radius: var(--radio-sm);
+    color: var(--texto-tenue);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+}
+.hdr__link:hover { color: var(--texto); background: var(--superficie2); }
+.hdr__link--activo { color: var(--texto); background: var(--verde-tenue); }
+.hdr__derecha { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+
+/* Badge de puntos */
+.badge-puntos {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--verde-tenue);
+    border: 1px solid rgba(47, 191, 113, 0.35);
+    color: var(--verde-vivo);
+    font-family: var(--fuente-mono);
+    font-size: 13px;
+    font-weight: 500;
+}
+.badge-puntos svg { width: 14px; height: 14px; }
+
+/* Avatar + menú */
+.avatar { position: relative; }
+.avatar__btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--superficie2);
+    border: 1px solid var(--borde);
+    color: var(--texto);
+    font-family: var(--fuente-titulo);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+}
+.avatar__btn:hover { border-color: var(--verde); }
+
+/* Marcos de avatar desbloqueables (personalización). El mapa ID de recompensa ->
+   clase vive en js/layout.js (MARCOS); acá va solo el estilo del anillo. */
+.avatar__btn.marco-reciclador  { box-shadow: 0 0 0 2px var(--base), 0 0 0 4px var(--verde); }
+.avatar__btn.marco-mural       { box-shadow: 0 0 0 2px var(--base), 0 0 0 4px var(--lavanda); }
+.avatar__btn.marco-holografico { box-shadow: 0 0 0 2px var(--base), 0 0 0 4px var(--azul); }
+.avatar__menu {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 180px;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-sm);
+    padding: 6px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+.avatar__nombre {
+    padding: 8px 10px 10px;
+    border-bottom: 1px solid var(--borde);
+    margin-bottom: 6px;
+}
+.avatar__nombre b { display: block; font-size: 14px; }
+.avatar__nombre span { font-size: 12px; color: var(--texto-tenue); text-transform: capitalize; }
+.avatar__item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 9px 10px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    color: var(--texto-tenue);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+.avatar__item:hover { background: var(--superficie2); color: var(--texto); }
+.avatar__item--peligro:hover { color: var(--rojo); }
+
+/* ---------- Footer ---------- */
+.ftr {
+    flex-shrink: 0;
+    border-top: 1px solid var(--borde);
+    background: var(--superficie);
+    padding: 34px 24px 26px;
+}
+.ftr__grid {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+}
+.ftr__col h4 {
+    font-family: var(--fuente-titulo);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--texto-tenue2);
+    margin: 0 0 12px;
+}
+.ftr__col a, .ftr__col p {
+    display: block;
+    color: var(--texto-tenue);
+    text-decoration: none;
+    font-size: 14px;
+    margin: 0 0 8px;
+}
+.ftr__col a:hover { color: var(--verde-vivo); }
+.ftr__baja {
+    max-width: 1080px;
+    margin: 26px auto 0;
+    padding-top: 18px;
+    border-top: 1px solid var(--borde);
+    color: var(--texto-tenue2);
+    font-size: 13px;
+}
+
+/* ============================================================================
+ * COMPONENTES BASE
+ * ==========================================================================*/
+
+/* ---------- Tarjeta métrica ---------- */
+.metrica {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    padding: 18px 20px;
+}
+.metrica__valor {
+    font-family: var(--fuente-titulo);
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--texto);
+}
+.metrica__etiqueta { font-size: 14px; color: var(--texto-tenue); margin-top: 2px; }
+.metrica__pie { font-size: 12px; color: var(--texto-tenue2); margin-top: 8px; }
+.metrica-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+/* ---------- Tabla con paginación ---------- */
+.tabla-wrap {
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    overflow: hidden;
+    background: var(--superficie);
+}
+.tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.tabla th, .tabla td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--borde);
+}
+.tabla th {
+    font-family: var(--fuente-titulo);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--texto-tenue2);
+    background: var(--superficie2);
+}
+.tabla tbody tr:last-child td { border-bottom: none; }
+.tabla tbody tr:hover td { background: rgba(47, 191, 113, 0.04); }
+.tabla .mono { font-family: var(--fuente-mono); }
+.paginacion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-top: 1px solid var(--borde);
+    background: var(--superficie2);
+    font-size: 13px;
+    color: var(--texto-tenue);
+}
+.paginacion__btns { display: flex; gap: 8px; }
+.paginacion button {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--borde);
+    background: var(--superficie);
+    color: var(--texto);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+.paginacion button:hover:not(:disabled) { border-color: var(--verde); }
+.paginacion button:disabled { opacity: 0.4; cursor: default; }
+
+/* ---------- Chips de filtro ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+    padding: 7px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--borde);
+    background: var(--superficie);
+    color: var(--texto-tenue);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.chip:hover { color: var(--texto); }
+.chip--activo {
+    background: var(--verde-tenue);
+    border-color: rgba(47, 191, 113, 0.4);
+    color: var(--verde-vivo);
+}
+
+/* ---------- Badge de estado (colores del dominio real) ---------- */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+.badge::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+.badge--funcional    { color: var(--verde-vivo); background: rgba(47,191,113,0.12); border-color: rgba(47,191,113,0.3); }
+.badge--desbordado   { color: var(--ambar);      background: rgba(245,181,74,0.12); border-color: rgba(245,181,74,0.3); }
+.badge--no-funcional { color: var(--rojo);       background: rgba(245,138,138,0.12); border-color: rgba(245,138,138,0.3); }
+.badge--dado-de-baja { color: var(--gris);       background: rgba(94,102,144,0.15); border-color: rgba(94,102,144,0.35); }
+.badge--en-stock     { color: var(--azul);       background: rgba(111,178,251,0.12); border-color: rgba(111,178,251,0.3); }
+
+/* ---------- Estado vacío ---------- */
+.vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px 24px;
+    border: 1px dashed var(--borde);
+    border-radius: var(--radio);
+    background: rgba(18, 26, 46, 0.4);
+}
+.vacio__icono {
+    width: 48px; height: 48px;
+    color: var(--texto-tenue2);
+    margin-bottom: 14px;
+}
+.vacio__titulo { font-family: var(--fuente-titulo); font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+.vacio__texto  { color: var(--texto-tenue); font-size: 14px; max-width: 340px; margin: 0; }
+
+/* ---------- Toast ---------- */
+.toast-zona {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 240px;
+    max-width: 360px;
+    padding: 12px 16px;
+    border-radius: var(--radio-sm);
+    background: var(--superficie2);
+    border: 1px solid var(--borde);
+    color: var(--texto);
+    font-size: 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    animation: toast-in 0.2s ease;
+}
+.toast--ok    { border-left: 3px solid var(--verde); }
+.toast--error { border-left: 3px solid var(--rojo); }
+.toast--info  { border-left: 3px solid var(--azul); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ============================================================================
+ * PANTALLAS DEL VECINO (Fase 2)
+ * ==========================================================================*/
+
+/* Encabezado de sección */
+.seccion { margin-top: 30px; }
+.seccion__titulo {
+    font-family: var(--fuente-titulo);
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.seccion__link { font-size: 13px; color: var(--verde-vivo); text-decoration: none; }
+.seccion__link:hover { text-decoration: underline; }
+
+/* Panel genérico (tarjeta contenedora) */
+.panel {
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    padding: 20px 22px;
+}
+
+/* CTA prominente */
+.cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: var(--radio-sm);
+    background: var(--verde);
+    color: #06210F;
+    font-family: var(--fuente-titulo);
+    font-weight: 600;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+}
+.cta:hover { background: var(--verde-vivo); }
+
+/* Lista simple (incidencias recientes, contenedores) */
+.lista { display: flex; flex-direction: column; gap: 1px; background: var(--borde); border: 1px solid var(--borde); border-radius: var(--radio); overflow: hidden; }
+.lista__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 13px 18px;
+    background: var(--superficie);
+    text-decoration: none;
+    color: var(--texto);
+}
+a.lista__item:hover { background: var(--superficie2); }
+.lista__item .principal { font-size: 14px; }
+.lista__item .secundario { font-size: 12px; color: var(--texto-tenue); margin-top: 2px; }
+
+/* Formulario de app (reportar) */
+.form-app { display: flex; flex-direction: column; gap: 18px; max-width: 560px; }
+.campo-app { display: flex; flex-direction: column; gap: 6px; }
+.campo-app > label { font-size: 13px; color: var(--texto-tenue); font-weight: 500; }
+.campo-app select,
+.campo-app textarea,
+.campo-app input[type="text"],
+.campo-app input[type="email"] {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--superficie2);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-sm);
+    color: var(--texto);
+    font: inherit;
+    font-size: 14px;
+    padding: 11px 13px;
+}
+.campo-app select:focus,
+.campo-app textarea:focus,
+.campo-app input:focus { outline: none; border-color: var(--verde); }
+.campo-app textarea { resize: vertical; min-height: 84px; }
+.campo-app__ayuda { font-size: 12px; color: var(--texto-tenue2); }
+
+/* Dropzone de foto */
+.foto-campo input[type="file"] { display: none; }
+.foto-drop {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 26px;
+    border: 1px dashed var(--borde);
+    border-radius: var(--radio);
+    background: rgba(18,26,46,.4);
+    color: var(--texto-tenue);
+    cursor: pointer;
+    text-align: center;
+}
+.foto-drop:hover { border-color: var(--verde); color: var(--texto); }
+.foto-drop--cargada { border-style: solid; border-color: var(--verde); }
+.foto-preview { max-width: 100%; max-height: 220px; border-radius: var(--radio-sm); margin-top: 4px; }
+
+.aviso-puntos {
+    display: flex; align-items: center; gap: 8px;
+    padding: 11px 14px; border-radius: var(--radio-sm);
+    background: var(--verde-tenue); border: 1px solid rgba(47,191,113,.3);
+    color: var(--verde-vivo); font-size: 13px;
+}
+
+/* Línea de tiempo (detalle de incidencia) */
+.linea-tiempo { display: flex; flex-direction: column; gap: 0; }
+.hito { display: flex; gap: 14px; }
+.hito__eje { display: flex; flex-direction: column; align-items: center; }
+.hito__punto {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--verde); border: 2px solid var(--verde);
+    flex-shrink: 0; margin-top: 3px;
+}
+.hito__linea { width: 2px; flex: 1; background: var(--borde); min-height: 22px; }
+.hito:last-child .hito__linea { display: none; }
+.hito__cuerpo { padding-bottom: 20px; }
+.hito__titulo { font-weight: 500; font-size: 14px; }
+.hito__fecha { font-size: 12px; color: var(--texto-tenue); font-family: var(--fuente-mono); margin-top: 2px; }
+.hito--pendiente .hito__punto { background: transparent; border-color: var(--texto-tenue2); }
+.hito--pendiente .hito__titulo { color: var(--texto-tenue2); }
+
+/* Grilla de detalle */
+.detalle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+.dato-linea { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--borde); font-size: 14px; }
+.dato-linea:last-child { border-bottom: none; }
+.dato-linea span:first-child { color: var(--texto-tenue); }
+.detalle-foto { width: 100%; border-radius: var(--radio); border: 1px solid var(--borde); }
+
+/* Catálogo de recompensas (Tanda B) */
+.catalogo { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.recompensa h3 { font-family: var(--fuente-titulo); font-size: 17px; font-weight: 600; margin: 8px 0 4px; }
+.recompensa .secundario { min-height: 34px; }
+.recompensa .cta { margin-top: 14px; width: 100%; text-align: center; justify-content: center; }
+.cta--bloqueada { background: var(--superficie2); color: var(--texto-tenue2); cursor: default; }
+.cta--bloqueada:hover { background: var(--superficie2); }
+
+/* Mapa (Tanda B) */
+.mapa-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 18px; align-items: start; }
+.mapa-plot { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 14px; }
+.mapa-leyenda { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--borde); }
+.saldo-grande { font-family: var(--fuente-titulo); font-size: 52px; font-weight: 700; line-height: 1; color: var(--verde-vivo); }
+.tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.puntos-mas   { color: var(--verde-vivo); font-family: var(--fuente-mono); }
+.puntos-menos { color: var(--rojo);       font-family: var(--fuente-mono); }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 720px) {
+    .hdr { gap: 12px; padding: 0 14px; }
+    .hdr__nav { display: none; }              /* nav colapsa; el menú avatar queda */
+    .ftr__grid { grid-template-columns: 1fr; gap: 22px; }
+    .app-main { padding: 20px 16px 40px; }
+    .detalle-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================================
+   FASE 3 — Cuadrilla y Operario
+   Componentes que las 7 pantallas nuevas necesitan y que no existían. Se agregan;
+   no se reescribe nada de arriba. Mismos tokens (nada de colores nuevos).
+============================================================================ */
+
+/* Estados de una región de datos (cargando / vacío / error). El texto de los tres
+   vive en el HTML de cada pantalla; _comun.js solo muestra uno. */
+.estado { font-size: 13px; color: var(--texto-tenue); padding: 14px 0; margin: 0; }
+.vacio--error .vacio__titulo { color: var(--rojo); }
+
+/* Barra de progreso (avance del recorrido de una ruta). El ancho es dato de la
+   API y va por style inline: es un valor, no un estilo. */
+.progreso { height: 8px; border-radius: 4px; background: var(--superficie2); overflow: hidden; margin-top: 8px; }
+.progreso__llena { display: block; height: 100%; background: var(--verde); border-radius: 4px; }
+.progreso__txt { display: flex; justify-content: space-between; font-size: 12px; color: var(--texto-tenue); margin-top: 6px; }
+
+/* Maestro-detalle (Intervenciones de la cuadrilla): lista a la izquierda, detalle
+   a la derecha. En pantalla angosta se apilan. */
+.maestro-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; align-items: start; }
+.lista__item--activo { background: var(--superficie2); border-left: 3px solid var(--verde); }
+.lista__item--boton { width: 100%; text-align: left; background: none; border: none; font: inherit; color: inherit; cursor: pointer; }
+
+/* Chips de contenedores de una ruta (C2). Reusa el look de .chip pero sin ser
+   filtro: no son clickeables. */
+.chip--dato { cursor: default; }
+.chip--dato:hover { background: var(--superficie2); }
+
+/* Nota de «sin respaldo en el modelo»: pantallas que existen en la maqueta pero
+   cuyo dato no tiene dónde persistirse todavía (ver el .html de cada una). */
+.nota-modelo {
+    display: block; font-size: 12px; line-height: 1.5;
+    color: var(--ambar); background: rgba(245, 181, 74, .08);
+    border: 1px solid rgba(245, 181, 74, .28); border-radius: var(--radio-sm);
+    padding: 10px 12px; margin: 10px 0 0;
+}
+
+/* Tarjeta de ruta (C2) */
+.ruta-tarjeta { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px 18px; }
+.ruta-tarjeta__cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ruta-tarjeta__tit { font-family: var(--fuente-titulo); font-size: 20px; margin: 0; }
+.ruta-tarjeta__meta { font-size: 13px; color: var(--texto-tenue); margin: 2px 0 0; }
+.rutas-grid { display: grid; gap: 16px; }
+
+@media (max-width: 900px) {
+    .maestro-grid { grid-template-columns: 1fr; }
+    .mapa-grid { grid-template-columns: 1fr; }
+}

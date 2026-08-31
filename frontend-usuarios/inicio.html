@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     Pantalla: INICIO del vecino (saludo, métricas, recientes, contenedores).
+     Datos: API Usuarios (GET /saldo) y API Gestión (GET /vecino/metricas,
+            /vecino/incidencias?limite=5, /contenedores).
+     JS que la acompaña: js/pantallas/inicio.js
+     Regla "el HTML manda": todo el texto fijo está acá; el JS solo rellena los
+     data-campo y clona los <template> de las listas.
+============================================================================= -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inicio · Cathartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="app">
+    <div data-shell-header></div>
+
+    <main class="app-main">
+        <h1 class="app-main__titulo">Hola, <span data-campo="nombre">vecino</span></h1>
+        <p class="app-main__sub">Este es tu panel. Reportá incidencias y seguí su estado.</p>
+
+        <a class="cta" href="reportar.html">＋ Reportar incidencia</a>
+
+        <!-- Métricas: tres tarjetas fijas; solo el número sale de la API. -->
+        <div class="seccion">
+            <div class="metrica-grid">
+                <div class="metrica">
+                    <div class="metrica__valor" data-campo="saldo">0</div>
+                    <div class="metrica__etiqueta">Puntos disponibles</div>
+                    <div class="metrica__pie">150 pts por incidencia validada</div>
+                </div>
+                <div class="metrica">
+                    <div class="metrica__valor" data-campo="en_curso">0</div>
+                    <div class="metrica__etiqueta">Incidencias en curso</div>
+                </div>
+                <div class="metrica">
+                    <div class="metrica__valor" data-campo="finalizadas">0</div>
+                    <div class="metrica__etiqueta">Resueltas este año</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Incidencias recientes -->
+        <div class="seccion">
+            <h2 class="seccion__titulo">Incidencias recientes
+                <a class="seccion__link" href="mis-incidencias.html">Ver todas</a>
+            </h2>
+            <div class="lista" id="lista-recientes"></div>
+            <div class="vacio" id="vacio-recientes" hidden>
+                <p class="vacio__titulo">Todavía no reportaste nada</p>
+                <p class="vacio__texto">Cuando reportes una incidencia, la vas a ver acá con su estado.</p>
+            </div>
+        </div>
+
+        <!-- Contenedores cercanos -->
+        <div class="seccion">
+            <h2 class="seccion__titulo">Contenedores cercanos</h2>
+            <div class="lista" id="lista-contenedores"></div>
+            <div class="vacio" id="vacio-contenedores" hidden>
+                <p class="vacio__titulo">Sin contenedores</p>
+                <p class="vacio__texto">No hay contenedores cargados en el sistema.</p>
+            </div>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <!-- Molde de una incidencia reciente (valores de muestra, se reemplazan por API). -->
+    <template id="tpl-reciente">
+        <a class="lista__item" href="incidencia.html">
+            <div>
+                <div class="principal" data-campo="titulo">#0 · desbordado</div>
+                <div class="secundario" data-campo="detalle">01/01/2026 · Calle 1234</div>
+            </div>
+            <span class="badge badge--desbordado" data-campo="estado">en curso</span>
+        </a>
+    </template>
+
+    <!-- Molde de un contenedor cercano. -->
+    <template id="tpl-contenedor">
+        <div class="lista__item">
+            <div>
+                <div class="principal" data-campo="ubicacion">Av. Rivera 3245, Buceo</div>
+                <div class="secundario" data-campo="detalle">basura · Buceo — Pocitos</div>
+            </div>
+            <span class="badge badge--funcional" data-campo="estado">funcional</span>
+        </div>
+    </template>
+
+    <script src="js/api.js"></script>
+    <script src="js/pantallas/_comun.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/guardia.js"></script>
+    <script src="js/pantallas/inicio.js"></script>
+</body>
+</html>
