@@ -75,7 +75,7 @@ class IncidenciaController extends Controller
         $this->redirigir('incidencias/ver?id=' . $id);
     }
 
-    /** Sirve la foto del reporte leyéndola del storage de api-gestion (config). */
+    /** Sirve la foto del reporte leyéndola de storage/uploads/incidencias (config). */
     public function foto(): void
     {
         Auth::exigir();

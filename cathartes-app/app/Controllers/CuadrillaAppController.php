@@ -4,8 +4,8 @@ declare(strict_types=1);
 require_once BASE_PATH . '/app/Models/Recoleccion.php';
 
 /**
- * Endpoints de la cuadrilla. Protegidos: Auth::proteger() valida el Bearer y
- * re-chequea usuario.estado='activo' (kill-switch). El rol se deduce del subtipo.
+ * Endpoints de la cuadrilla. Protegidos: Auth::proteger() valida la cookie de
+ * sesión y re-chequea usuario.estado='activo' (kill-switch). El rol se deduce del subtipo.
  *
  * GET /cuadrilla/ruta -> rutas del día de la cuadrilla autenticada.
  */
