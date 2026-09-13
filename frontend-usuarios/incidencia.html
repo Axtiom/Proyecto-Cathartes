@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     Pantalla: DETALLE DE INCIDENCIA (datos + línea de tiempo + foto).
+     Datos: API Gestión (GET /vecino/incidencia?id=N, GET /vecino/incidencia-foto).
+     JS que la acompaña: js/pantallas/incidencia.js
+     Los 4 hitos de la línea de tiempo están escritos a mano; el JS marca cuáles
+     están alcanzados y rellena las fechas.
+============================================================================= -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de incidencia · Cathartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="app">
+    <div data-shell-header></div>
+
+    <main class="app-main">
+        <a href="mis-incidencias.html" class="seccion__link" style="display:inline-block;margin-bottom:10px">← Volver a mis incidencias</a>
+        <h1 class="app-main__titulo">Incidencia <span data-campo="id">#0</span></h1>
+
+        <div class="detalle-grid" style="margin-top:18px">
+            <div>
+                <img class="detalle-foto" data-foto alt="Foto de la incidencia" hidden>
+                <div class="panel" data-sinfoto hidden style="text-align:center;color:var(--texto-tenue)">Sin foto adjunta</div>
+
+                <div class="panel" style="margin-top:16px">
+                    <div class="dato-linea"><span>Tipo</span><span data-campo="tipo">desbordado</span></div>
+                    <div class="dato-linea"><span>Estado</span><span class="badge badge--desbordado" data-campo="estado">en curso</span></div>
+                    <div class="dato-linea"><span>Validada</span><span data-campo="validada">No</span></div>
+                    <div class="dato-linea"><span>Contenedor</span><span data-campo="contenedor">#1 · Av. Rivera 3245</span></div>
+                    <div class="dato-linea"><span>Descripción</span><span data-campo="descripcion">—</span></div>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="seccion__titulo">Línea de tiempo</h2>
+                <div class="panel">
+                    <div class="linea-tiempo">
+                        <div class="hito" data-hito="reportada">
+                            <div class="hito__eje"><div class="hito__punto"></div><div class="hito__linea"></div></div>
+                            <div class="hito__cuerpo">
+                                <div class="hito__titulo">Reportada</div>
+                                <div class="hito__fecha" data-campo="f_reportada">—</div>
+                            </div>
+                        </div>
+                        <div class="hito hito--pendiente" data-hito="validada">
+                            <div class="hito__eje"><div class="hito__punto"></div><div class="hito__linea"></div></div>
+                            <div class="hito__cuerpo">
+                                <div class="hito__titulo">Validada</div>
+                                <div class="hito__fecha" data-campo="f_validada">pendiente</div>
+                            </div>
+                        </div>
+                        <div class="hito hito--pendiente" data-hito="asignada">
+                            <div class="hito__eje"><div class="hito__punto"></div><div class="hito__linea"></div></div>
+                            <div class="hito__cuerpo">
+                                <div class="hito__titulo">Cuadrilla asignada</div>
+                                <div class="hito__fecha" data-campo="f_asignada">pendiente</div>
+                            </div>
+                        </div>
+                        <div class="hito hito--pendiente" data-hito="finalizada">
+                            <div class="hito__eje"><div class="hito__punto"></div><div class="hito__linea"></div></div>
+                            <div class="hito__cuerpo">
+                                <div class="hito__titulo">Finalizada</div>
+                                <div class="hito__fecha" data-campo="f_finalizada">pendiente</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/componentes/toast.js"></script>
+    <script src="js/pantallas/_comun.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/guardia.js"></script>
+    <script src="js/pantallas/incidencia.js"></script>
+</body>
+</html>

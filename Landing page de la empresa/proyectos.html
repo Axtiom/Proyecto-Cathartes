@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Axtiom — Proyectos: Cathartes, sistema de gestión de residuos urbanos." />
+  <title>Axtiom · Proyectos</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    [data-reveal] { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    [data-reveal].revealed { opacity: 1; transform: translateY(0); }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2.5rem;
+    }
+    .module-card {
+      background: var(--color-surface-2);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      transition: all var(--transition);
+    }
+    .module-card:hover {
+      border-color: var(--color-violet);
+      transform: translateY(-3px);
+    }
+    .module-card__icon  { font-size: 1.6rem; margin-bottom: 0.75rem; }
+    .module-card__title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .module-card__text  { font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.6; }
+
+    .tech-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.7rem;
+      border-radius: 99px;
+      background: var(--color-violet-glow);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      margin: 0.2rem;
+    }
+
+    .coming-soon {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--color-surface);
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      color: var(--color-text-muted);
+    }
+    .coming-soon__icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.4; }
+    .coming-soon__text { font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+
+  <!-- ===== ENCABEZADO ===== -->
+  <header class="header">
+    <nav class="nav container">
+      <a href="index.html" class="nav__brand" aria-label="Axtiom – Inicio">
+        <img src="Logo empresa.jpeg" alt="Logo de Axtiom" class="nav__logo" />
+        <span class="nav__brand-name">A<span>x</span>tiom</span>
+      </a>
+
+      <button class="nav__toggle" aria-label="Alternar navegación" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+
+      <ul class="nav__links" role="list">
+        <li><a href="index.html"          class="nav__link">Inicio</a></li>
+        <li><a href="quienes-somos.html"  class="nav__link">Quiénes Somos</a></li>
+        <li><a href="mision.html"         class="nav__link">Misión</a></li>
+        <li><a href="vision.html"         class="nav__link">Visión</a></li>
+        <li><a href="proyectos.html"      class="nav__link nav__link--active">Proyectos</a></li>
+        <li><a href="contacto.html"       class="nav__link">Contacto</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- ===== CONTENIDO PRINCIPAL ===== -->
+  <main>
+
+    <!-- Hero de página -->
+    <section class="page-hero">
+      <div class="container">
+        <div class="tag">Nuestro Trabajo</div>
+        <h1 class="page-hero__title">Proyectos</h1>
+        <p class="page-hero__subtitle">
+          Software construido para problemas reales. Esto es en lo que hemos estado trabajando.
+        </p>
+      </div>
+    </section>
+
+    <!-- Cathartes — proyecto insignia -->
+    <section class="section">
+      <div class="container">
+
+        <div class="divider"></div>
+        <div class="tag">Proyecto Insignia</div>
+
+        <div class="project-card" data-reveal>
+
+          <!-- Cabecera de la tarjeta -->
+          <div class="project-card__header">
+            <div class="project-card__badge">
+              🌿 En desarrollo activo
+            </div>
+            <h2 class="project-card__name">Cathartes</h2>
+            <p class="project-card__alias">
+              Sistema de Gestión de Residuos Urbanos &nbsp;·&nbsp;
+              <em>También conocido como: <strong>Cathartes</strong></em>
+            </p>
+          </div>
+
+          <!-- Cuerpo de la tarjeta -->
+          <div class="project-card__body">
+
+            <p class="project-card__desc">
+              Cathartes — desarrollado bajo la marca de producto <strong>Cathartes</strong> —
+              es una plataforma web integral para la gestión de residuos urbanos en
+              Montevideo. Aborda contenedores que se desbordan sin un canal ágil para
+              reportarlo, recorridos de recolección sin registro trazable, y la distancia
+              entre el vecino que detecta el problema y el organismo que puede resolverlo.
+            </p>
+
+            <p class="project-card__desc">
+              La plataforma articula a cuatro roles del ciclo de gestión: el
+              <em>Vecino</em>, que reporta incidencias con fotografía y hace
+              seguimiento de ellas; el <em>Líder de cuadrilla</em>, responsable de
+              su equipo, que recibe la ruta y el vehículo asignados y marca la
+              incidencia como resuelta una vez atendida; el <em>Operario</em>, que
+              trabaja en una instalación —vertedero o centro de acopio— e informa
+              su estado y capacidad; y el <em>Administrador</em>, que gestiona y
+              valida las incidencias, asigna cuadrillas y rutas, y tiene visibilidad
+              general del sistema. Dentro de este último rol se distingue al
+              <em>Administrador Jefe</em>, quien comparte las mismas funciones y
+              además puede asignar y destituir a otros administradores.
+            </p>
+
+            <!-- Lista de características -->
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">Características principales</h3>
+            <div class="feature-list">
+              <div class="feature-item">
+                <span><strong>Reportes del vecino</strong> — el vecino reporta incidencias con
+                fotografía y hace seguimiento de ellas hasta su resolución.</span>
+              </div>
+              <div class="feature-item">
+                <span><strong>Gestión de cuadrillas</strong> — el líder de cuadrilla recibe la ruta y
+                el vehículo asignados, ejecuta la tarea en territorio y marca la incidencia como resuelta.</span>
+              </div>
+              <div class="feature-item">
+                <span><strong>Estado de instalaciones</strong> — el operario informa el estado y la
+                capacidad del vertedero o centro de acopio donde trabaja.</span>
+              </div>
+              <div class="feature-item">
+                <span><strong>Gestión y validación</strong> — el administrador gestiona y valida las
+                incidencias, asigna cuadrillas y rutas, con visibilidad general del sistema.</span>
+              </div>
+              <div class="feature-item">
+                <span><strong>Administrador Jefe</strong> — comparte las funciones del administrador
+                y además puede asignar y destituir a otros administradores.</span>
+              </div>
+              <div class="feature-item">
+                <span><strong>Control de versiones</strong> — desarrollo versionado con Git y
+                alojado en un repositorio de GitHub, con trazabilidad técnica desde el día uno.</span>
+              </div>
+            </div>
+
+            <!-- Módulos del sistema -->
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;margin-top:2rem;">Módulos del sistema</h3>
+
+            <div class="module-grid">
+              <div class="module-card">
+                <div class="module-card__icon">📱</div>
+                <p class="module-card__title">Vecino</p>
+                <p class="module-card__text">
+                  Reporta incidencias con fotografía y hace seguimiento de ellas
+                  hasta su resolución.
+                </p>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card__icon">🚛</div>
+                <p class="module-card__title">Líder de cuadrilla</p>
+                <p class="module-card__text">
+                  Recibe la ruta y el vehículo asignados, ejecuta la tarea en
+                  territorio y marca la incidencia como resuelta.
+                </p>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card__icon">🏭</div>
+                <p class="module-card__title">Operario</p>
+                <p class="module-card__text">
+                  Trabaja en un vertedero o centro de acopio e informa su estado
+                  y su capacidad.
+                </p>
+              </div>
+
+              <div class="module-card">
+                <div class="module-card__icon">🖥️</div>
+                <p class="module-card__title">Administrador</p>
+                <p class="module-card__text">
+                  Gestiona y valida incidencias, asigna cuadrillas y rutas, con
+                  visibilidad general del sistema. El Administrador Jefe además
+                  asigna y destituye administradores.
+                </p>
+              </div>
+            </div>
+
+            <!-- Etiquetas de tecnología -->
+            <div style="margin-top:2rem;">
+              <h3 style="font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:0.75rem;">
+                Stack tecnológico
+              </h3>
+              <div>
+                <span class="tech-tag">HTML5</span>
+                <span class="tech-tag">CSS</span>
+                <span class="tech-tag">JavaScript</span>
+                <span class="tech-tag">PHP 8</span>
+                <span class="tech-tag">MySQL 8</span>
+                <span class="tech-tag">Docker</span>
+                <span class="tech-tag">Linux</span>
+                <span class="tech-tag">Git / GitHub</span>
+              </div>
+            </div>
+
+            <!-- Dominios del proyecto -->
+            <div style="margin-top:1.5rem;">
+              <h3 style="font-size:0.85rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:0.75rem;">
+                Dominios (proyecto académico)
+              </h3>
+              <div>
+                <span class="tech-tag">axtiom.com.uy — sitio institucional</span>
+                <span class="tech-tag">cathartes.uy — producto Cathartes</span>
+              </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div style="margin-top:2.5rem;display:flex;gap:1rem;flex-wrap:wrap;">
+              <!-- [TODO: Agregar enlaces reales cuando el repositorio/demo sea público] -->
+              <a href="#" class="btn btn--primary" style="opacity:0.5;pointer-events:none;cursor:default;">
+                Demo en vivo (próximamente)
+              </a>
+              <a href="#" class="btn btn--outline" style="opacity:0.5;pointer-events:none;cursor:default;">
+                Repositorio (próximamente)
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Próximos proyectos -->
+    <section class="section section--alt">
+      <div class="container">
+        <div class="tag">Lo que viene</div>
+        <h2 class="section-title" data-reveal>Más proyectos en el horizonte</h2>
+        <p class="section-subtitle" data-reveal>
+          Cathartes es nuestro primero, pero no el último. Más tecnología cívica está en camino.
+        </p>
+
+        <div class="coming-soon" data-reveal>
+          <div class="coming-soon__icon">🔭</div>
+          <p style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">
+            Próximo proyecto por definir
+          </p>
+          <p class="coming-soon__text">
+            Una vez consolidado Cathartes, Axtiom evaluará nuevos proyectos de
+            software para organizaciones, empresas y clientes particulares.
+            Mantente atento.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section" style="text-align:center;">
+      <div class="container" data-reveal>
+        <div class="tag">Colabora</div>
+        <h2 class="section-title">¿Te interesa nuestro trabajo?</h2>
+        <p class="section-subtitle" style="margin-inline:auto;">
+          Si quieres saber más sobre Cathartes, hablar de una posible colaboración
+          o simplemente conversar sobre tecnología cívica — escríbenos.
+        </p>
+        <a href="contacto.html" class="btn btn--primary">Contactar a Axtiom</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== PIE DE PÁGINA ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div>
+          <div class="footer__brand">
+            <img src="Logo empresa.jpeg" alt="Logo de Axtiom" class="footer__logo" />
+            <span class="footer__brand-name">A<span>x</span>tiom</span>
+          </div>
+          <p class="footer__desc">
+            Equipo de desarrollo de software que construye tecnología cívica con propósito.
+          </p>
+        </div>
+        <div>
+          <p class="footer__heading">Navegar</p>
+          <nav class="footer__nav" aria-label="Navegación del pie de página">
+            <a href="index.html">Inicio</a>
+            <a href="quienes-somos.html">Quiénes Somos</a>
+            <a href="mision.html">Misión</a>
+            <a href="vision.html">Visión</a>
+            <a href="proyectos.html">Proyectos</a>
+            <a href="contacto.html">Contacto</a>
+          </nav>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>&copy; 2026 Axtiom. Todos los derechos reservados.</span>
+        <span style="color:var(--color-violet);">Construido con propósito.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

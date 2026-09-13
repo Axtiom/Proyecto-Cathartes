@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Componentes base · Cathartes (dev)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/app.css">
+    <style>
+        .demo-sec { margin-bottom: 34px; }
+        .demo-sec > h2 {
+            font-family: var(--fuente-titulo); font-size: 14px; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--texto-tenue2); border-bottom: 1px solid var(--borde);
+            padding-bottom: 8px; margin: 0 0 16px;
+        }
+        .demo-fila { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    </style>
+</head>
+<body class="app">
+    <main class="app-main">
+        <h1 class="app-main__titulo">Componentes base</h1>
+        <p class="app-main__sub">Banco de pruebas de dev. No es una pantalla del sistema: sirve para verificar los componentes reutilizables de la Fase 1.</p>
+
+        <div id="d-diag" style="display:none;background:rgba(245,138,138,.12);border:1px solid var(--rojo);color:var(--rojo);padding:12px 16px;border-radius:10px;margin-bottom:20px;font-family:var(--fuente-mono);font-size:13px;"></div>
+
+        <div class="demo-sec"><h2>Tarjeta métrica</h2><div class="metrica-grid" id="d-metricas"></div></div>
+        <div class="demo-sec"><h2>Badge de estado</h2><div class="demo-fila" id="d-badges"></div></div>
+        <div class="demo-sec"><h2>Chips de filtro</h2><div id="d-chips"></div></div>
+        <div class="demo-sec"><h2>Tabla con paginación</h2><div id="d-tabla"></div></div>
+        <div class="demo-sec"><h2>Estado vacío</h2><div id="d-vacio"></div></div>
+        <div class="demo-sec"><h2>Toast</h2><div class="demo-fila">
+            <button class="chip" id="d-toast-ok">Toast ok</button>
+            <button class="chip" id="d-toast-err">Toast error</button>
+            <button class="chip" id="d-toast-info">Toast info</button>
+        </div></div>
+    </main>
+
+    <script src="js/api.js"></script>
+    <script src="js/componentes/tarjeta-metrica.js"></script>
+    <script src="js/componentes/tabla-paginada.js"></script>
+    <script src="js/componentes/chips-filtro.js"></script>
+    <script src="js/componentes/badge-estado.js"></script>
+    <script src="js/componentes/estado-vacio.js"></script>
+    <script src="js/componentes/toast.js"></script>
+    <script>
+    // Banner de diagnóstico: si algo tira un error JS, se ve en la página
+    // (no hace falta abrir la consola). Debe quedar SIEMPRE vacío.
+    function diag(msg) {
+        var b = document.getElementById('d-diag');
+        b.textContent = '⚠ Error JS: ' + msg;
+        b.style.display = 'block';
+    }
+    window.addEventListener('error', function (e) { diag(e.message); });
+
+    try {
+        if (!window.Cathartes || !Cathartes.UI) throw new Error('Cathartes.UI no está definido (¿no cargó algún js/componentes/*.js?)');
+        var UI = Cathartes.UI;
+        ['tarjetaMetrica','tablaPaginada','chipsFiltro','badgeEstado','estadoVacio','toast'].forEach(function (m) {
+            if (typeof UI[m] !== 'function') throw new Error('Falta UI.' + m + ' (no cargó ese componente)');
+        });
+
+        // Métricas
+        var dm = document.getElementById('d-metricas');
+        dm.appendChild(UI.tarjetaMetrica({ valor: 3, etiqueta: 'Incidencias en curso' }));
+        dm.appendChild(UI.tarjetaMetrica({ valor: 1, etiqueta: 'Resueltas este año' }));
+
+        // Badges (estados reales del dominio)
+        var db = document.getElementById('d-badges');
+        ['funcional','desbordado','no funcional','dado de baja','en stock'].forEach(function (e) {
+            db.appendChild(UI.badgeEstado(e));
+        });
+
+        // ---- Datos de la tabla (7 contenedores de muestra) ----
+        var filas = [];
+        var estados = ['funcional','desbordado','no funcional'];
+        for (var i = 1; i <= 7; i++) {
+            filas.push({ id: i, ubicacion: 'Contenedor ' + i + ' · Buceo', tipo: i % 2 ? 'basura' : 'reciclable', estado: estados[i % 3] });
+        }
+
+        var contTabla = document.getElementById('d-tabla');
+        function renderTabla(filtro) {
+            var visibles = (filtro === 'todas') ? filas : filas.filter(function (f) { return f.estado === filtro; });
+            contTabla.textContent = '';            // limpiar antes de re-render
+            contTabla.appendChild(UI.tablaPaginada({
+                porPagina: 5,
+                columnas: [
+                    { clave: 'id', titulo: 'ID', mono: true },
+                    { clave: 'ubicacion', titulo: 'Ubicación' },
+                    { clave: 'tipo', titulo: 'Tipo' },
+                    { titulo: 'Estado', render: function (f) { return UI.badgeEstado(f.estado); } }
+                ],
+                filas: visibles,
+                vacio: { titulo: 'Sin contenedores', texto: 'Ningún contenedor con ese estado.' }
+            }));
+        }
+
+        // Chips que SÍ filtran la tabla en vivo (además de un toast de feedback)
+        document.getElementById('d-chips').appendChild(UI.chipsFiltro({
+            opciones: [
+                { valor: 'todas',        etiqueta: 'Todas' },
+                { valor: 'funcional',    etiqueta: 'Funcional' },
+                { valor: 'desbordado',   etiqueta: 'Desbordado' },
+                { valor: 'no funcional', etiqueta: 'No funcional' }
+            ],
+            activo: 'todas',
+            onChange: function (v) { renderTabla(v); UI.toast('Filtro: ' + v, 'info'); }
+        }));
+        renderTabla('todas');   // render inicial
+
+        // Estado vacío
+        document.getElementById('d-vacio').appendChild(UI.estadoVacio({
+            titulo: 'Todavía no reportaste nada',
+            texto: 'Cuando reportes una incidencia, la vas a ver listada acá con su estado.'
+        }));
+
+        // Toasts
+        document.getElementById('d-toast-ok').addEventListener('click', function () { UI.toast('Incidencia reportada con éxito.', 'ok'); });
+        document.getElementById('d-toast-err').addEventListener('click', function () { UI.toast('No se pudo enviar. Reintentá.', 'error'); });
+        document.getElementById('d-toast-info').addEventListener('click', function () { UI.toast('Recolección programada para mañana.', 'info'); });
+    } catch (err) {
+        diag(err.message);
+    }
+    </script>
+</body>
+</html>

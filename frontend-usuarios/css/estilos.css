@@ -1,0 +1,349 @@
+/* ============================================================
+   Cathartes · Frontend de Usuarios — pantallas de acceso
+   Paleta oscura compartida del sistema (tokens en español, igual
+   que la landing). Fuentes de marca: Barlow Condensed / DM Sans /
+   JetBrains Mono (cargadas por <link> en el layout).
+   ============================================================ */
+:root {
+    /* --- Paleta base (fuente única, misma que la landing) --- */
+    --base:         #0B1020;
+    --superficie:   #121A2E;
+    --superficie2:  #18223C;
+    --borde:        #263156;
+    --verde:        #2FBF71;
+    --verde-vivo:   #38D07E;
+    --verde-oscuro: #06210F;
+    --verde-tenue:  rgba(47, 191, 113, 0.12);
+    --lavanda:      #A9B4F0;
+    --texto:        #E6EAF5;
+    --texto-tenue:  #9AA6C4;
+    --texto-tenue2: #6E72A0;   /* maqueta --dim2 */
+    --borde2:       rgba(231, 234, 245, 0.16);  /* maqueta --border2 (recuadro OTP relleno) */
+
+    /* --- Estados (de la maqueta, sin equivalente en la landing) --- */
+    --ambar: #F5B54A;          /* maqueta --amber */
+    --rojo:  #F58A8A;          /* maqueta --red   */
+    --azul:  #6FB2FB;          /* maqueta --blue  */
+    --gris:  #5E6690;          /* maqueta --gray  */
+
+    /* --- Radios --- */
+    --radio:    16px;
+    --radio-sm: 10px;
+
+    /* --- Fuentes de marca --- */
+    --fuente:        'DM Sans', system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --fuente-titulo: 'Barlow Condensed', var(--fuente);
+    --fuente-mono:   'JetBrains Mono', ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+/* Normalización: el atributo `hidden` debe ganar aunque la clase declare
+   display (p. ej. .aviso{display:flex}). Sin esto, las cajas de flash/error
+   con `hidden` se muestran vacías. Toggle desde JS con el.hidden = true/false. */
+[hidden] { display: none !important; }
+
+body {
+    margin: 0;
+    font-family: var(--fuente);
+    background: #05070E;
+    color: var(--texto);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+}
+
+.mono { font-family: var(--fuente-mono); }
+
+/* ---------- Pantalla (fondo + ambiente) ---------- */
+.pantalla {
+    position: relative;
+    min-height: 100vh;
+    background: var(--base);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 40px 20px;
+}
+.pantalla__amb {
+    position: absolute;
+    inset: 0;
+    opacity: 0.04;
+    background-image:
+        linear-gradient(var(--texto) 1px, transparent 1px),
+        linear-gradient(90deg, var(--texto) 1px, transparent 1px);
+    background-size: 46px 46px;
+    pointer-events: none;
+}
+.pantalla__glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+}
+.pantalla__glow--verde {
+    top: -40px; right: -40px; width: 320px; height: 320px;
+    background: rgba(47, 191, 113, 0.08);
+}
+.pantalla__glow--lavanda {
+    bottom: -60px; left: -40px; width: 300px; height: 300px;
+    background: rgba(169, 180, 240, 0.07);
+}
+
+/* ---------- Volver ---------- */
+.volver {
+    position: absolute;
+    top: 26px; left: 30px;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: var(--texto-tenue);
+}
+.volver:hover { color: var(--texto); }
+.volver svg {
+    width: 15px; height: 15px;
+    fill: none; stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ---------- Tarjeta ---------- */
+.tarjeta {
+    position: relative;
+    z-index: 2;
+    width: 430px;
+    max-width: 100%;
+    background: var(--superficie);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    padding: 34px 34px 30px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+.tarjeta--ancha { width: 470px; }
+
+/* ---------- Marca (dentro de la tarjeta) ---------- */
+.marca {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 26px;
+}
+.marca__nombre {
+    font-family: var(--fuente-titulo);
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-size: 18px;
+}
+
+/* ---------- Títulos ---------- */
+.tarjeta h1 {
+    font-family: var(--fuente-titulo);
+    font-weight: 700;
+    font-size: 30px;
+    text-align: center;
+    line-height: 1.1;
+    margin: 0;
+}
+.sub {
+    font-size: 14px;
+    color: var(--texto-tenue);
+    text-align: center;
+    margin: 8px 0 26px;
+    line-height: 1.5;
+    font-weight: 300;
+}
+.sub b { color: var(--texto); }
+
+/* ---------- Campos ---------- */
+.campo { margin-bottom: 16px; }
+/* minmax(0,1fr) fuerza columnas exactamente iguales: sin él, el min-content
+   del <input> empuja el track y la columna derecha queda más ancha (BUG-002). */
+.fila-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.fila-2 > .campo { min-width: 0; }
+.campo label {
+    display: block;
+    font-size: 12px;
+    color: var(--texto-tenue);
+    margin-bottom: 7px;
+    font-weight: 400;
+}
+.entrada {
+    background: var(--superficie2);
+    border: 1px solid var(--borde);
+    border-radius: 9px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+.entrada:focus-within {
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(47, 191, 113, 0.14);
+}
+.entrada svg {
+    width: 16px; height: 16px;
+    fill: none; stroke: var(--texto-tenue2); stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round;
+    flex-shrink: 0;
+}
+.entrada input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--texto);
+    font-family: inherit;
+    font-size: 14px;
+}
+.entrada input::placeholder { color: var(--texto-tenue2); }
+
+/* ---------- Fila entre (recordarme / olvidé) ---------- */
+.fila-entre {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 0 20px;
+}
+.recordar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--texto-tenue);
+    cursor: pointer;
+    user-select: none;
+}
+.recordar input {
+    width: 16px; height: 16px;
+    accent-color: var(--verde);
+    cursor: pointer;
+}
+a.enlace { color: var(--lavanda); font-size: 13px; }
+
+/* ---------- Aviso ---------- */
+.aviso {
+    display: flex;
+    gap: 10px;
+    background: rgba(169, 180, 240, 0.08);
+    border: 1px solid rgba(169, 180, 240, 0.2);
+    border-radius: 9px;
+    padding: 11px 13px;
+    margin-bottom: 20px;
+}
+.aviso svg {
+    width: 17px; height: 17px;
+    fill: none; stroke: var(--lavanda); stroke-width: 1.8;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.aviso p { font-size: 12.5px; color: var(--texto-tenue); line-height: 1.5; margin: 0; }
+.aviso b { color: var(--lavanda); }
+
+/* Variante de error (validación / credenciales) */
+.aviso--error { background: rgba(245, 138, 138, 0.09); border-color: rgba(245, 138, 138, 0.28); }
+.aviso--error svg { stroke: var(--rojo); }
+.aviso--error p { color: #F3C7C7; }
+
+/* Variante dev (código 2FA en modo stub) */
+.aviso--dev { background: rgba(169, 180, 240, 0.10); border-color: rgba(169, 180, 240, 0.30); }
+.aviso--dev p { color: var(--lavanda); font-family: var(--fuente-mono); }
+
+/* ---------- /inicio (página protegida mínima) ---------- */
+.dato {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 11px 14px;
+    background: var(--superficie2);
+    border: 1px solid var(--borde);
+    border-radius: 9px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+.dato span:first-child { color: var(--texto-tenue); }
+.dato span:last-child { color: var(--texto); }
+.dato .mono { font-family: var(--fuente-mono); }
+.boton--tenue {
+    background: var(--superficie2);
+    color: var(--texto);
+    border: 1px solid var(--borde);
+    margin-top: 8px;
+}
+.boton--tenue:hover { background: var(--superficie2); border-color: var(--lavanda); color: var(--lavanda); }
+
+/* ---------- Botón ---------- */
+.boton {
+    display: block;
+    width: 100%;
+    background: var(--verde);
+    color: var(--verde-oscuro);
+    font-family: var(--fuente);
+    font-weight: 600;
+    font-size: 15px;
+    padding: 13px;
+    border-radius: 9px;
+    border: none;
+    text-align: center;
+    cursor: pointer;
+    transition: background .15s;
+}
+.boton:hover { background: var(--verde-vivo); }
+
+/* ---------- Alterna (¿ya tenés cuenta?) ---------- */
+.alterna {
+    text-align: center;
+    font-size: 13px;
+    color: var(--texto-tenue);
+    margin-top: 20px;
+}
+.alterna a { color: var(--lavanda); }
+
+/* ---------- OTP (2FA) — 6 recuadros como la maqueta ---------- */
+.otp {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 6px 0 24px;
+}
+.otp__caja {
+    width: 50px;
+    height: 60px;
+    background: var(--superficie2);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    text-align: center;
+    font-family: var(--fuente-mono);
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--texto);
+    outline: none;
+    padding: 0;
+    -moz-appearance: textfield;
+}
+.otp__caja::-webkit-outer-spin-button,
+.otp__caja::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.otp__caja--lleno { border-color: var(--borde2); }
+.otp__caja:focus {
+    border-color: var(--verde);
+    box-shadow: 0 0 0 3px rgba(47, 191, 113, 0.14);
+}
+.resend {
+    text-align: center;
+    font-size: 13px;
+    color: var(--texto-tenue);
+    margin-top: 18px;
+}
+.resend a { color: var(--lavanda); }
+.resend .mono { color: var(--texto-tenue2); }
+
+@media (max-width: 480px) {
+    .tarjeta { padding: 26px 22px 24px; }
+    .fila-2 { grid-template-columns: 1fr; }
+    .volver { top: 16px; left: 18px; }
+    .otp { gap: 6px; }
+    .otp__caja { width: 42px; height: 54px; font-size: 22px; }
+}
