@@ -52,16 +52,13 @@
 (function () {
     'use strict';
 
-    // Las 3 APIs que existían por separado (usuarios, gestión, recolección) se
-    // unificaron en una sola app (cathartes-app), que vive como carpeta hermana
-    // de este frontend. Las tres apuntan al mismo lugar: la ruta que las
-    // distingue ya viene en cada endpoint (/login, /vecino/..., /cuadrilla/...).
-    var API_BASE = '../cathartes-app/public/api';
-
+    // Bases de las tres APIs, cada una carpeta hermana de este frontend. Rutas
+    // RELATIVAS (nada de host/protocolo hardcodeado): sirven igual en cualquier
+    // subcarpeta o dominio en que se despliegue el proyecto.
     var CONFIG = {
-        apiUsuarios:    API_BASE,
-        apiGestion:     API_BASE,
-        apiRecoleccion: API_BASE
+        apiUsuarios:    '../api-usuarios/public',
+        apiGestion:     '../api-gestion/public',
+        apiRecoleccion: '../api-recoleccion/public'
     };
 
     var K_FLASH = 'cathartes.flash';

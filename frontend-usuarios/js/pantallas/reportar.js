@@ -73,7 +73,7 @@
             fd.append('foto', fileIn.files[0]);
             G.post('/vecino/incidencias', fd).then(function (res) {
                 if (res.status === 201 && res.data && res.data.ok) {
-                    C.Auth.flash('Incidencia reportada. Suma 150 puntos al validarse.');
+                    C.Auth.flash('Incidencia reportada.');
                     window.location.href = 'mis-incidencias.html';
                 } else {
                     C.UI.toast((res.data && res.data.error) || 'No se pudo reportar.', 'error');

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!-- ============================================================================
      Pantalla: INICIO del vecino (saludo, métricas, recientes, contenedores).
-     Datos: API Usuarios (GET /saldo) y API Gestión (GET /vecino/metricas,
-            /vecino/incidencias?limite=5, /contenedores).
+     Datos: API Gestión (GET /vecino/metricas, /vecino/incidencias?limite=5,
+            /contenedores).
      JS que la acompaña: js/pantallas/inicio.js
      Regla "el HTML manda": todo el texto fijo está acá; el JS solo rellena los
      data-campo y clona los <template> de las listas.
@@ -27,14 +27,9 @@
 
         <a class="cta" href="reportar.html">＋ Reportar incidencia</a>
 
-        <!-- Métricas: tres tarjetas fijas; solo el número sale de la API. -->
+        <!-- Métricas: dos tarjetas fijas; solo el número sale de la API. -->
         <div class="seccion">
             <div class="metrica-grid">
-                <div class="metrica">
-                    <div class="metrica__valor" data-campo="saldo">0</div>
-                    <div class="metrica__etiqueta">Puntos disponibles</div>
-                    <div class="metrica__pie">150 pts por incidencia validada</div>
-                </div>
                 <div class="metrica">
                     <div class="metrica__valor" data-campo="en_curso">0</div>
                     <div class="metrica__etiqueta">Incidencias en curso</div>

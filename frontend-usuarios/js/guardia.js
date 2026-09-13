@@ -1,14 +1,13 @@
 /* ============================================================================
  * guardia.js — Guardia de sesión + bootstrap de las pantallas autenticadas.
  * ----------------------------------------------------------------------------
- * Cathartes.Guardia.proteger() -> Promise<{ usuario, saldo }>
+ * Cathartes.Guardia.proteger() -> Promise<{ usuario }>
  *   Valida el token contra la API ANTES de renderizar:
  *     - sin token en storage          -> redirige a login.html
  *     - GET /yo != 200 (401, red, ...) -> limpia, avisa y redirige a login.html
  *       (el kill-switch por estado vive del lado API: si la cuenta dejó de estar
  *        activa, /yo responde 401 y acá se cae la sesión sola)
- *     - OK -> resuelve { usuario, saldo }. El saldo sale de /saldo (null si no
- *       es vecino: los otros roles no muestran badge de puntos).
+ *     - OK -> resuelve { usuario }.
  *
  * Cathartes.App.iniciar(opts, render)
  *   Azúcar: corre la guardia, monta el shell (header/footer) y recién entonces
@@ -35,17 +34,7 @@
                 Api.get('/yo').then(function (res) {
                     var d = res.data || {};
                     if (res.status === 200 && d.usuario) {
-                        // Sesión válida. Buscar saldo (badge) y canjes (marco del
-                        // avatar). No bloqueantes: si fallan, el header degrada.
-                        var esVecino = d.usuario.rol === 'vecino';
-                        Promise.all([
-                            Api.get('/saldo'),
-                            esVecino ? Api.get('/mis-canjes') : Promise.resolve({ status: 0, data: null })
-                        ]).then(function (rs) {
-                            var saldo  = (rs[0].status === 200 && rs[0].data) ? rs[0].data.saldo : null;
-                            var canjes = (rs[1].status === 200 && rs[1].data) ? (rs[1].data.items || []) : [];
-                            resolve({ usuario: d.usuario, saldo: saldo, canjes: canjes });
-                        });
+                        resolve({ usuario: d.usuario });
                         return;
                     }
                     // 401 = cuenta desactivada (kill-switch) o token inválido/vencido.

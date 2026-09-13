@@ -5,9 +5,8 @@
 --  Regenerado el 2026-07-27 A PARTIR DE LA BASE VIVA. Incluye tanto la
 --  siembra original de la Fase 0.5 como todo lo que se fue cargando desde
 --  los ABM del backoffice durante las fases 4 a 4.2 (una segunda
---  instalación, un segundo camión, una tercera ruta, la cuarta recompensa,
---  incidencias con foto, intervenciones abiertas, una segunda toma y un
---  segundo canje).
+--  instalación, un segundo camión, una tercera ruta, incidencias con foto,
+--  intervenciones abiertas y una segunda toma).
 --
 --  Objetivo: dataset a escala mínima para verificar las pantallas con DATOS
 --  REALES (no demo). Contenido ficticio, filas reales; ubicaciones de
@@ -25,10 +24,10 @@
 --  FECHAS RELATIVAS (no literales), a propósito
 --    Todas las fechas se siembran como DATE_SUB(NOW(), INTERVAL n MINUTE),
 --    con el desfase exacto que tenían en la base viva. Así el dataset no
---    envejece: las métricas "del mes" (canjes del mes en Recompensas y en el
---    Dashboard) y el gráfico de los últimos 6 meses de Informes siguen dando
---    números vivos cada vez que se resiembra. Al lado de cada valor va el
---    equivalente en días, que es lo que se lee de un vistazo.
+--    envejece: las métricas del Dashboard y el gráfico de los últimos 6
+--    meses de Informes siguen dando números vivos cada vez que se resiembra.
+--    Al lado de cada valor va el equivalente en días, que es lo que se lee
+--    de un vistazo.
 --
 --  GOTCHAS DEL DDL RESPETADOS
 --    - La columna de contraseña es `contrasena` (SIN ñ). El documento de
@@ -99,8 +98,7 @@ INSERT INTO administrador (ID_usuario, jefe) VALUES (5, 'no');   -- admin común
 INSERT INTO operario (ID_usuario, ID_instalacion) VALUES (2, 1);
 -- usuario.nombre ES el nombre del equipo (la cuadrilla es una cuenta compartida).
 INSERT INTO cuadrilla (ID_usuario, ID_camion, estado) VALUES (3, 1, 'en servicio');
--- saldo = 500: cierra la aritmética de gamificación (ver bloque 10).
-INSERT INTO vecino (ID_usuario, saldo) VALUES (4, 500);
+INSERT INTO vecino (ID_usuario) VALUES (4);
 
 -- ---------------------------------------------------------------------
 -- 6) Rutas
@@ -132,28 +130,12 @@ INSERT INTO contenedor (ID, ubicacion, latitud, longitud, tipo, estado, fecha_ba
 (3, 'Av. Brasil 3100, Pocitos', -34.909500, -56.147000, 'reciclable', 'no funcional', NULL, NULL, 2);
 
 -- ---------------------------------------------------------------------
--- 8) Recompensas (catálogo de gamificación)
---    Las 1 y 2 tienen canjes, así que NO se pueden sacar del catálogo
---    (canje las referencia con RESTRICT). Las 3 y 4 no: sirven para probar
---    la quita del catálogo.
--- ---------------------------------------------------------------------
-INSERT INTO recompensa (ID, nombre, descripcion, valor) VALUES
-(1, 'Marco «Reciclador»',             'Marco de perfil para vecinos recicladores.',                     300),
-(2, 'Insignia «Vecino comprometido»', 'Insignia visible en el perfil.',                                 250),
-(3, 'Mural de vecinos',               'Lugar en el mural público de vecinos.',                          800),
-(4, 'Descuento de factura electrica', 'se hace un descuento del 10% a su siguiente factura electrica', 5600);
-
--- ---------------------------------------------------------------------
--- 9) Incidencias (todas reportadas por el vecino, ID 4)
+-- 8) Incidencias (todas reportadas por el vecino, ID 4)
 --    El hueco en el ID 5 es de la base viva y se preserva.
 --
 --    Las 6, 7 y 8 tienen foto: el nombre apunta a un archivo que vive en el
---    disco de la API, en api-gestion/storage/uploads/incidencias/. Si esos
+--    disco de esta misma app, en storage/uploads/incidencias/. Si esos
 --    .png no están, la ficha muestra "Sin foto" — el dato está igual.
---
---    OJO con el trigger: trg_incidencia_valida_puntos dispara AFTER UPDATE
---    en la transición validada 'no'→'si'. Estos son INSERT con validada='si'
---    ya puesta, así que NO acredita puntos y el saldo sembrado no se duplica.
 -- ---------------------------------------------------------------------
 INSERT INTO incidencia_historial (ID_incidencia, fecha_ing, descripcion, foto, tipo, validada, estado, ID_usuario, ID_contenedor) VALUES
 (1, DATE_SUB(NOW(), INTERVAL 33393 MINUTE), 'Contenedor desbordado sobre la vereda.', NULL,    'desbordado',           'si', 'finalizada', 4, 2),  -- ~23,2 d
@@ -165,12 +147,12 @@ INSERT INTO incidencia_historial (ID_incidencia, fecha_ing, descripcion, foto, t
 (8, DATE_SUB(NOW(), INTERVAL  3008 MINUTE), 'puto',                                   '8.png', 'roto',                 'si', 'en curso',   4, 2);  -- ~2,1 d
 
 -- ---------------------------------------------------------------------
--- 10) Intervenciones de la cuadrilla 3
---     El hueco en el ID 2 es de la base viva y se preserva.
---     Una finalizada (duró 1440 min = 24 h exactas) y dos abiertas: es lo que
---     hace que el informe de rendimiento del backoffice tenga algo que decir
---     (asignadas 3, finalizadas 1, abiertas 2, tasa 33%, promedio 1 d con n=1).
---     Coherencia temporal de la #1: reporte (~23,2 d) → inicio (~21,2 d) → fin (~20,2 d).
+-- 9) Intervenciones de la cuadrilla 3
+--    El hueco en el ID 2 es de la base viva y se preserva.
+--    Una finalizada (duró 1440 min = 24 h exactas) y dos abiertas: es lo que
+--    hace que el informe de rendimiento del backoffice tenga algo que decir
+--    (asignadas 3, finalizadas 1, abiertas 2, tasa 33%, promedio 1 d con n=1).
+--    Coherencia temporal de la #1: reporte (~23,2 d) → inicio (~21,2 d) → fin (~20,2 d).
 -- ---------------------------------------------------------------------
 INSERT INTO intervencion (ID_intervencion, fecha_inicio, fecha_fin, tarea_finalizada, ID_incidencia, ID_cuadrilla) VALUES
 (1, DATE_SUB(NOW(), INTERVAL 30513 MINUTE), DATE_SUB(NOW(), INTERVAL 29073 MINUTE), 'si', 1, 3),  -- ~21,2 d → ~20,2 d
@@ -178,25 +160,13 @@ INSERT INTO intervencion (ID_intervencion, fecha_inicio, fecha_fin, tarea_finali
 (4, DATE_SUB(NOW(), INTERVAL   287 MINUTE), NULL,                                   'no', 7, 3);  -- ~4,8 h, abierta
 
 -- ---------------------------------------------------------------------
--- 11) Canjes (gamificación). La aritmética cierra EXACTO:
---       otorgados  = 7 incidencias validadas × 150 = 1050
---       canjeados  = 300 + 250                     =  550
---       saldo      = 1050 − 550                    =  500  = vecino.saldo
---     Ese cuadre es justo lo que muestra el panel "Balance de puntos" de la
---     pantalla de Recompensas: si no da, hubo un UPDATE manual al saldo.
--- ---------------------------------------------------------------------
-INSERT INTO canje (ID_vecino, ID_recompensa, fecha, puntos_gastados) VALUES
-(4, 1, DATE_SUB(NOW(), INTERVAL 6033 MINUTE), 300),   -- ~4,2 d
-(4, 2, DATE_SUB(NOW(), INTERVAL 4269 MINUTE), 250);   -- ~3,0 d
-
--- ---------------------------------------------------------------------
--- 12) Notificaciones para el vecino 4
+-- 10) Notificaciones para el vecino 4
 --     Las fechas coinciden a propósito con los hechos que las originan:
 --     la de "validada" con el ingreso de la incidencia 3, y la de
 --     "finalizada" con el cierre de la intervención 1.
 -- ---------------------------------------------------------------------
 INSERT INTO notificacion (ID, ID_usuario, ID_incidencia, tipo, mensaje, fecha, leida) VALUES
-(1, 4, 3, 'incidencia validada',   'Tu incidencia fue validada. +150 puntos.',     DATE_SUB(NOW(), INTERVAL 11793 MINUTE), 'si'),  -- ~8,2 d
+(1, 4, 3, 'incidencia validada',   'Tu incidencia fue validada.',                  DATE_SUB(NOW(), INTERVAL 11793 MINUTE), 'si'),  -- ~8,2 d
 (2, 4, 1, 'incidencia finalizada', 'Tu incidencia fue resuelta por la cuadrilla.', DATE_SUB(NOW(), INTERVAL 29073 MINUTE), 'no');  -- ~20,2 d
 
 -- =====================================================================

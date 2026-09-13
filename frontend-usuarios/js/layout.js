@@ -4,10 +4,7 @@
  * Regla "el HTML manda": la estructura y el texto del header/footer viven en
  * partials/layout.html (dos <template>). Este módulo NO construye HTML con
  * createElement: clona esos templates y solo rellena los data-campo (nombre,
- * rol, saldo, iniciales) y engancha los eventos (menú del avatar, cerrar sesión).
- *
- * Además aplica el "marco" de avatar activo del vecino, derivado de sus canjes
- * (mapa explícito ID de recompensa -> clase CSS en MARCOS).
+ * rol, iniciales) y engancha los eventos (menú del avatar, cerrar sesión).
  *
  * UN HEADER POR ROL (Fase 3): el partial trae tpl-header-vecino,
  * tpl-header-cuadrilla y tpl-header-operario. Acá se clona el del rol de la sesión
@@ -24,9 +21,6 @@
     window.Cathartes = window.Cathartes || {};
     var Auth = window.Cathartes.Auth;
     var Api  = window.Cathartes.Api;
-
-    // Mapa explícito y legible: ID de recompensa -> clase CSS del marco (app.css).
-    var MARCOS = { 1: 'marco-reciclador', 3: 'marco-mural' };
 
     var partialCache = null;
 
@@ -53,15 +47,6 @@
     function iniciales(nombre) {
         var p = String(nombre || '').trim().split(/\s+/);
         return ((p[0] || '').charAt(0) + (p.length > 1 ? p[p.length - 1].charAt(0) : '')).toUpperCase() || '?';
-    }
-
-    function marcoActivo(canjes) {
-        var clase = null, valor = -1;
-        (canjes || []).forEach(function (c) {
-            var cls = MARCOS[c.id];
-            if (cls && (c.valor || 0) > valor) { clase = cls; valor = c.valor || 0; }
-        });
-        return clase;
     }
 
     /** Rellena los [data-campo] de un fragmento con un objeto {campo: valor}. */
@@ -130,27 +115,16 @@
         rellenar(header, {
             iniciales: iniciales(ctx.usuario.nombre),
             nombre:    ctx.usuario.nombre,
-            rol:       ctx.usuario.rol,
-            saldo:     (ctx.saldo == null ? null : ctx.saldo)
+            rol:       ctx.usuario.rol
         });
-
-        // Badge de puntos: solo si hay saldo (vecino).
-        if (ctx.saldo !== null && ctx.saldo !== undefined) {
-            var badge = header.querySelector('[data-badge]');
-            if (badge) badge.hidden = false;
-        }
 
         // Link de navegación activo. El header ya es el del rol, así que no hace
         // falta acotar por data-rol.
         var activo = header.querySelector('[data-nav="' + (opts && opts.activo) + '"]');
         if (activo) activo.classList.add('hdr__link--activo');
 
-        // Marco del avatar activo (derivado de los canjes del vecino).
-        var marco = marcoActivo(ctx.canjes);
-        var btn = header.querySelector('[data-avatar-btn]');
-        if (marco && btn) btn.classList.add(marco);
-
         // Menú del avatar (abrir/cerrar) + cerrar sesión.
+        var btn  = header.querySelector('[data-avatar-btn]');
         var menu = header.querySelector('[data-avatar-menu]');
         if (btn && menu) {
             btn.addEventListener('click', function (e) {

@@ -19,10 +19,11 @@
 --    Ya incluye TODAS las adiciones hechas durante el desarrollo: no hay
 --    scripts de migracion aparte que haya que correr despues. Para levantar
 --    la base desde cero alcanza con:
---        1) db/BD.sql    (estructura + trigger)   <- este archivo
+--        1) db/BD.sql    (estructura)   <- este archivo
 --        2) db/seed.sql  (datos de prueba)
 --    Verificado el 2026-07-27 contra la base viva: 22 tablas, mismas
---    columnas, mismo trigger.
+--    columnas, mismo trigger. Se le dio de baja a la gamificacion despues
+--    de esa fecha: quedaron 20 tablas y sin trigger (ver nota mas abajo).
 -- =====================================================================
 --  REGISTRO DE ADICIONES AL MER
 --  ---------------------------------------------------------------------
@@ -37,10 +38,11 @@
 --      guardarla. Guarda el nombre/ruta relativa; los bytes viven en el
 --      disco de la API (storage/uploads/incidencias/), no en la base.
 --
---  2026-07-23 (Fase 2)   TRIGGER trg_incidencia_valida_puntos
---      Acredita los 150 puntos fijos al pasar validada de 'no' a 'si'.
---      Se eligio trigger y no logica de aplicacion para que la regla valga
---      tambien cuando el admin valida por SQL directo. Ver BLOQUE 8.
+--  2026-07-23 (Fase 2)   [REVERTIDO] TRIGGER trg_incidencia_valida_puntos
+--      Acreditaba 150 puntos fijos al pasar validada de 'no' a 'si'. Se sacó
+--      el trigger junto con toda la gamificación (recompensa, canje,
+--      vecino.saldo): el sistema de puntos/recompensas se dio de baja del
+--      alcance del proyecto. Ver nota de "DECISIONES DE NO AGREGAR" más abajo.
 --
 --  2026-07-23 (Fase 2.5) contenedor.latitud/longitud  DECIMAL(9,6) NULL
 --                        instalacion.latitud/longitud DECIMAL(9,6) NULL
@@ -82,11 +84,8 @@
 --                             subtipo de Usuario y comparte UNA cuenta.
 --    cuadrilla.integrantes -> la cuadrilla es una cuenta compartida, no un
 --                             conjunto de personas.
---    recompensa.activo     -> "recompensa activa" = existe en el catalogo.
---                             No hay flag de activacion: si no se la quiere
---                             ofrecer, se saca del catalogo (y solo se puede
---                             si nunca se canjeo: 'canje' la referencia con
---                             RESTRICT).
+--    recompensa.activo     -> [ya no aplica: se dio de baja toda la
+--                             gamificacion, ver bloque de arriba]
 --    2do tipo en instalacion -> el tipo (vertedero / centro de acopio) ya
 --                             determina el residuo que maneja; el residuo es
 --                             una etiqueta derivada en la vista, no columna.
@@ -147,14 +146,6 @@ CREATE TABLE camion (
     motivo_baja VARCHAR(255)    NULL,
     PRIMARY KEY (ID),
     UNIQUE KEY uq_camion_matricula (matricula)
-) ENGINE=InnoDB;
-
-CREATE TABLE recompensa (
-    ID          INT             AUTO_INCREMENT,
-    nombre      VARCHAR(100)    NOT NULL,
-    descripcion VARCHAR(255)    NULL,
-    valor       INT             NOT NULL,
-    PRIMARY KEY (ID)
 ) ENGINE=InnoDB;
 
 CREATE TABLE repuestos (
@@ -220,7 +211,6 @@ CREATE TABLE cuadrilla (
 
 CREATE TABLE vecino (
     ID_usuario  INT NOT NULL,
-    saldo       INT NOT NULL DEFAULT 0,
     PRIMARY KEY (ID_usuario),
     CONSTRAINT fk_vecino_usuario FOREIGN KEY (ID_usuario)
         REFERENCES usuario (ID)
@@ -259,26 +249,6 @@ CREATE TABLE autorizacion (
         ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_autorizacion_usuario FOREIGN KEY (ID_usuario)
         REFERENCES usuario (ID)
-        ON DELETE RESTRICT ON UPDATE CASCADE
-) ENGINE=InnoDB;
-
-
--- =====================================================================
---  BLOQUE 4 - Gamificacion
--- =====================================================================
-
-CREATE TABLE canje (
-    ID_vecino       INT         NOT NULL,
-    ID_recompensa   INT         NOT NULL,
-    fecha           DATETIME    NOT NULL,
-    puntos_gastados INT         NOT NULL,
-    PRIMARY KEY (ID_vecino, ID_recompensa, fecha),
-    KEY idx_canje_recompensa (ID_recompensa),
-    CONSTRAINT fk_canje_vecino FOREIGN KEY (ID_vecino)
-        REFERENCES vecino (ID_usuario)
-        ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_canje_recompensa FOREIGN KEY (ID_recompensa)
-        REFERENCES recompensa (ID)
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
@@ -449,30 +419,5 @@ CREATE TABLE toma (
 
 
 -- =====================================================================
---  BLOQUE 8 - Gamificacion automatica (trigger)
--- =====================================================================
---  Regla de dominio (CLAUDE.md sec. 4): 150 puntos fijos por incidencia
---  VALIDADA (no al resolver). Se acredita en la base con un trigger, no en la
---  capa de aplicacion, para que la regla valga SIEMPRE: valide el Backoffice por
---  su endpoint (Fase 3) o un admin por SQL directo (permitido por la consigna).
---  Solo dispara en la transicion validada 'no' -> 'si', asi que la siembra
---  (que inserta filas ya validadas con INSERT) no lo activa ni duplica puntos.
---  Agregado 2026-07-23 (Fase 2). Ver CLAUDE.md.
-
-DROP TRIGGER IF EXISTS trg_incidencia_valida_puntos;
-
-DELIMITER $$
-CREATE TRIGGER trg_incidencia_valida_puntos
-AFTER UPDATE ON incidencia_historial
-FOR EACH ROW
-BEGIN
-    IF OLD.validada = 'no' AND NEW.validada = 'si' THEN
-        UPDATE vecino SET saldo = saldo + 150 WHERE ID_usuario = NEW.ID_usuario;
-    END IF;
-END$$
-DELIMITER ;
-
-
--- =====================================================================
---  Fin del DDL - 22 tablas + 1 trigger
+--  Fin del DDL - 20 tablas
 -- =====================================================================

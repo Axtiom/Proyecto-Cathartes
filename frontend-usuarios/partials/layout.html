@@ -4,7 +4,7 @@
      Son la misma cáscara en las 15 pantallas, así que viven acá UNA sola vez y
      js/layout.js los clona. Regla "el HTML manda": toda la estructura y el texto
      fijo (nav, columnas del footer, teléfono, correo, bajada) están escritos acá,
-     legibles; el JS solo rellena los data-campo (nombre, rol, saldo, iniciales) y
+     legibles; el JS solo rellena los data-campo (nombre, rol, iniciales) y
      engancha eventos (menú del avatar, cerrar sesión).
 
      UN HEADER POR ROL (Fase 3). Hay TRES templates de header —
@@ -17,7 +17,7 @@
      viven en su propio template y se clonan dentro de cada header:
        · tpl-logo    — el isotipo Cathartes (SVG). Se escribe UNA vez: transcribirlo
                        a mano ya nos costó el BUG-011 (se perdió el ala izquierda).
-       · tpl-avatar  — badge de puntos + menú de usuario, común a los tres.
+       · tpl-avatar  — menú de usuario, común a los tres.
      El punto de inserción va marcado con data-logo / data-avatar.
 
      El FOOTER sigue siendo uno solo (no se duplica): solo su columna «Sistema» cambia
@@ -42,16 +42,10 @@
     </span>
 </template>
 
-<!-- Lado derecho del header: igual en los tres roles. El badge de puntos solo se
-     muestra si hay saldo (o sea, solo al vecino), y «Mi perfil» solo al vecino:
-     perfil.html es una pantalla suya y a los otros roles les daría 403. -->
+<!-- Lado derecho del header: igual en los tres roles. «Mi perfil» solo se muestra
+     al vecino: perfil.html es una pantalla suya y a los otros roles les daría 403. -->
 <template id="tpl-avatar">
     <div class="hdr__derecha">
-        <span class="badge-puntos" data-badge hidden title="Puntos disponibles">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 21.4l1.4-6.8L2.2 9l6.9-.7z"/></svg>
-            <span><b data-campo="saldo">0</b> pts</span>
-        </span>
-
         <div class="avatar">
             <button class="avatar__btn" type="button" data-avatar-btn aria-haspopup="true" aria-expanded="false" data-campo="iniciales">JP</button>
             <div class="avatar__menu" data-avatar-menu hidden>
@@ -93,7 +87,6 @@
             <a class="hdr__link" href="reportar.html"        data-nav="reportar">Reportar</a>
             <a class="hdr__link" href="mis-incidencias.html" data-nav="mis-incidencias">Mis incidencias</a>
             <a class="hdr__link" href="mapa.html"            data-nav="mapa">Mapa</a>
-            <a class="hdr__link" href="recompensas.html"     data-nav="recompensas">Recompensas</a>
         </nav>
         <span data-avatar></span>
     </header>
@@ -142,7 +135,6 @@
                 <a href="inicio.html">Inicio</a>
                 <a href="reportar.html">Reportar incidencia</a>
                 <a href="mis-incidencias.html">Mis incidencias</a>
-                <a href="recompensas.html">Recompensas</a>
             </div>
             <div class="ftr__col" data-rol="cuadrilla" hidden>
                 <h4>Sistema</h4>

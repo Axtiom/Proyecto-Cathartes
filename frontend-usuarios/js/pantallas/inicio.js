@@ -1,6 +1,6 @@
 /* ============================================================================
  * pantallas/inicio.js — Controlador del inicio del vecino.
- * Pantalla: inicio.html. Datos: /saldo (Usuarios), /vecino/metricas,
+ * Pantalla: inicio.html. Datos: /vecino/metricas,
  * /vecino/incidencias?limite=5, /contenedores (Gestión).
  * Solo pide datos, rellena data-campo y clona los <template>.
  * ==========================================================================*/
@@ -9,10 +9,9 @@
     var C = window.Cathartes, G = C.Gestion, Fmt = C.Fmt;
 
     function render(ctx) {
-        // Saludo + métricas (saldo ya viene en ctx; el resto de la API).
+        // Saludo (el resto de las métricas viene de la API).
         Fmt.rellenar(document.body, {
-            nombre: (ctx.usuario.nombre || '').split(/\s+/)[0] || ctx.usuario.nombre,
-            saldo:  (ctx.saldo == null ? 0 : ctx.saldo)
+            nombre: (ctx.usuario.nombre || '').split(/\s+/)[0] || ctx.usuario.nombre
         });
         G.get('/vecino/metricas').then(function (res) {
             var m = (res.data && res.data.metricas) || {};

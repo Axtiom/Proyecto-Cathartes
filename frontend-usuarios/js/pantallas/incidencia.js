@@ -42,8 +42,7 @@
                 tipo:        i.tipo,
                 validada:    i.validada === 'si' ? 'Sí' : 'No',
                 contenedor:  '#' + i.id_contenedor + ' · ' + i.ubicacion,
-                descripcion: i.descripcion || '—',
-                puntos:      i.validada === 'si' ? '150' : '—'
+                descripcion: i.descripcion || '—'
             });
             Fmt.badge(document.querySelector('[data-campo="estado"]'), i.estado);
 

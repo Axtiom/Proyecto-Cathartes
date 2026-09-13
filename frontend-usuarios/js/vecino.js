@@ -4,7 +4,7 @@
  * El "MVC" del frontend vive en JS: el HTML es la vista, este módulo el
  * controlador, api.js el modelo. Todo dato sale por fetch de las APIs
  * (Cathartes.Gestion para incidencias/contenedores, Cathartes.Usuarios para el
- * saldo). CERO datos de demo. Anti-XSS: todo texto de la API va por textContent.
+ * perfil). CERO datos de demo. Anti-XSS: todo texto de la API va por textContent.
  *
  * Cada pantalla se arranca con Cathartes.App.iniciar({activo}, Vecino.<pantalla>).
  * ==========================================================================*/
@@ -47,12 +47,11 @@
     function inicio(ctx) {
         document.getElementById('v-nombre').textContent = (ctx.usuario.nombre || '').split(/\s+/)[0] || ctx.usuario.nombre || '';
 
-        // Métricas: saldo (ya viene en ctx) + en curso/finalizadas (API).
+        // Métricas: en curso / finalizadas (API).
         var grid = document.getElementById('v-metricas');
         G.get('/vecino/metricas').then(function (res) {
             var m = (res.data && res.data.metricas) || { en_curso: 0, finalizadas_anio: 0 };
             limpiar(grid);
-            grid.appendChild(UI.tarjetaMetrica({ valor: (ctx.saldo == null ? 0 : ctx.saldo), etiqueta: 'Puntos disponibles', pie: '150 pts por incidencia validada' }));
             grid.appendChild(UI.tarjetaMetrica({ valor: m.en_curso, etiqueta: 'Incidencias en curso' }));
             grid.appendChild(UI.tarjetaMetrica({ valor: m.finalizadas_anio, etiqueta: 'Resueltas este año' }));
         });
@@ -182,7 +181,7 @@
             fd.append('foto', fileIn.files[0]);
             G.post('/vecino/incidencias', fd).then(function (res) {
                 if (res.status === 201 && res.data && res.data.ok) {
-                    C.Auth.flash('Incidencia reportada. Suma 150 puntos al validarse.');
+                    C.Auth.flash('Incidencia reportada.');
                     window.location.href = 'mis-incidencias.html';
                     return;
                 }
@@ -277,7 +276,6 @@
             linea('Validada', i.validada === 'si' ? 'Sí' : 'No');
             linea('Contenedor', '#' + i.id_contenedor + ' · ' + i.ubicacion);
             linea('Descripción', i.descripcion || '—');
-            linea('Puntos otorgados', i.validada === 'si' ? '150' : '—');
 
             // Línea de tiempo
             var iv = i.intervencion;
@@ -302,13 +300,6 @@
                 lt.appendChild(hito);
             });
         });
-    }
-
-    // ------------------------------------------------ helpers Tanda B ----
-    function actualizarBadgeHeader(saldo) {
-        var spans = document.querySelectorAll('.badge-puntos span');
-        var last = spans[spans.length - 1];
-        if (last) last.textContent = saldo + ' pts';
     }
 
     // ============================================================== /mapa ====
@@ -343,96 +334,8 @@
         });
     }
 
-    // ======================================================= /recompensas ====
-    function recompensas(ctx) {
-        var saldo = (ctx.saldo == null ? 0 : ctx.saldo);
-        var elSaldo = document.getElementById('rec-saldo');
-        var cat = document.getElementById('rec-catalogo');
-        elSaldo.textContent = saldo + ' pts';
-
-        var lista = [];
-        function render() {
-            limpiar(cat);
-            lista.forEach(function (r) {
-                var card = el('div', 'panel');
-                card.appendChild(el('div', 'metrica__valor', r.valor + ' pts'));
-                card.appendChild(el('div', 'principal', r.nombre));
-                card.appendChild(el('div', 'secundario', r.descripcion || ''));
-                var btn = document.createElement('button');
-                btn.className = 'cta'; btn.style.marginTop = '14px';
-                if (saldo >= r.valor) {
-                    btn.textContent = 'Canjear';
-                    btn.addEventListener('click', function () {
-                        btn.disabled = true;
-                        C.Usuarios.post('/canjes', { id_recompensa: r.id }).then(function (res) {
-                            if (res.status === 200 && res.data && res.data.ok) {
-                                saldo = res.data.saldo;
-                                elSaldo.textContent = saldo + ' pts';
-                                actualizarBadgeHeader(saldo);
-                                UI.toast('Canjeaste «' + r.nombre + '».', 'ok');
-                                render();
-                            } else {
-                                UI.toast((res.data && res.data.error) || 'No se pudo canjear.', 'error');
-                                btn.disabled = false;
-                            }
-                        });
-                    });
-                } else {
-                    btn.textContent = 'Faltan ' + (r.valor - saldo) + ' puntos';
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5'; btn.style.cursor = 'default';
-                }
-                card.appendChild(btn);
-                cat.appendChild(card);
-            });
-        }
-
-        C.Usuarios.get('/recompensas').then(function (res) {
-            lista = (res.data && res.data.items) || [];
-            render();
-        });
-    }
-
-    // =================================================== /recompensas/saldo ===
-    function saldoMovimientos(ctx) {
-        document.getElementById('s-num').textContent = (ctx.saldo == null ? 0 : ctx.saldo);
-        var cont = document.getElementById('s-tabla');
-        C.Usuarios.get('/movimientos').then(function (res) {
-            var items = (res.data && res.data.items) || [];
-            limpiar(cont);
-            cont.appendChild(UI.tablaPaginada({
-                porPagina: 10,
-                columnas: [
-                    { titulo: 'Fecha', render: function (f) { return fechaCorta(f.fecha); } },
-                    { clave: 'concepto', titulo: 'Concepto' },
-                    { titulo: 'Puntos', render: function (f) {
-                        var s = el('span', null, (f.puntos > 0 ? '+' : '') + f.puntos);
-                        s.style.color = f.puntos > 0 ? 'var(--verde-vivo)' : 'var(--rojo)';
-                        s.style.fontFamily = 'var(--fuente-mono)';
-                        return s;
-                    } }
-                ],
-                filas: items,
-                vacio: { titulo: 'Sin movimientos', texto: 'Todavía no tenés movimientos de puntos.' }
-            }));
-        });
-    }
-
     // ============================================================ /perfil ====
     function perfil(ctx) {
-        // Tabs
-        var tabs = { datos: document.getElementById('p-tab-datos'), pers: document.getElementById('p-tab-pers') };
-        var panels = { datos: document.getElementById('p-panel-datos'), pers: document.getElementById('p-panel-pers') };
-        function activar(cual) {
-            Object.keys(tabs).forEach(function (k) {
-                tabs[k].classList.toggle('chip--activo', k === cual);
-                panels[k].hidden = k !== cual;
-            });
-        }
-        tabs.datos.addEventListener('click', function () { activar('datos'); });
-        tabs.pers.addEventListener('click', function () { activar('pers'); });
-        activar('datos');
-
         // --- Datos personales ---
         var telsCont = document.getElementById('p-telefonos');
         function filaTel(valor) {
@@ -468,27 +371,6 @@
                 else UI.toast((res.data && res.data.error) || 'No se pudo guardar.', 'error');
             });
         });
-
-        // --- Personalización: marcos desbloqueados (canjes del vecino) ---
-        var galeria = document.getElementById('p-marcos');
-        C.Usuarios.get('/mis-canjes').then(function (res) {
-            var items = (res.data && res.data.items) || [];
-            limpiar(galeria);
-            if (!items.length) { galeria.appendChild(UI.estadoVacio({ titulo: 'Sin marcos desbloqueados', texto: 'Canjeá recompensas para desbloquear marcos de perfil.' })); return; }
-            var grid = el('div', 'catalogo');
-            items.forEach(function (r) {
-                var card = el('div', 'panel'); card.style.cursor = 'pointer';
-                card.appendChild(el('div', 'principal', r.nombre));
-                card.appendChild(el('div', 'secundario', 'Desbloqueado el ' + fechaCorta(r.fecha)));
-                card.addEventListener('click', function () {
-                    Array.prototype.forEach.call(grid.children, function (ch) { ch.style.borderColor = 'var(--borde)'; });
-                    card.style.borderColor = 'var(--verde)';
-                    UI.toast('Marco «' + r.nombre + '» seleccionado.', 'info');
-                });
-                grid.appendChild(card);
-            });
-            galeria.appendChild(grid);
-        });
     }
 
     // -------------------------------------------------------- export ----
@@ -498,8 +380,6 @@
         misIncidencias: misIncidencias,
         detalle: detalle,
         mapa: mapa,
-        recompensas: recompensas,
-        saldo: saldoMovimientos,
         perfil: perfil
     };
 })();

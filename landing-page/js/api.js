@@ -13,16 +13,14 @@
  * CONFIG — equivalente estático del .env:
  *   Al no haber PHP, no hay .env. El único punto a cambiar entre entornos
  *   (local -> producción) es CONFIG.apiGestion. Es una ruta RELATIVA a este
- *   archivo (nada de host/protocolo hardcodeado): apunta a la app unificada
- *   (cathartes-app), que vive como carpeta hermana de esta landing.
+ *   archivo (nada de host/protocolo hardcodeado): apunta a la API de
+ *   Gestión, que vive como carpeta hermana de esta landing.
  * ==========================================================================*/
 (function () {
     'use strict';
 
     var CONFIG = {
-        // Antes era la API de Gestión aparte; ahora es la app unificada
-        // (estadísticas y contenedores públicos siguen bajo /api/...).
-        apiGestion: '../cathartes-app/public/api'
+        apiGestion: '../api-gestion/public'
     };
 
     /**

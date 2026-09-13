@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <!-- ============================================================================
-     Pantalla: MI PERFIL (datos personales + personalización de marcos).
-     Datos: API de Usuarios — GET /perfil, POST /perfil (datos), GET /mis-canjes
-            (marcos desbloqueados por canjes).
+     Pantalla: MI PERFIL (datos personales).
+     Datos: API de Usuarios — GET /perfil, POST /perfil.
      JS que la acompaña: js/pantallas/perfil.js
-     Regla "el HTML manda": el form, los labels, los tabs y los textos fijos están
-     acá; el JS solo rellena valores, clona los <template> (fila de teléfono, marco)
-     y engancha eventos (tabs, agregar/quitar teléfono, guardar).
+     Regla "el HTML manda": el form, los labels y los textos fijos están acá;
+     el JS solo rellena valores, clona el <template> (fila de teléfono) y
+     engancha eventos (agregar/quitar teléfono, guardar).
 ============================================================================= -->
 <html lang="es">
 <head>
@@ -25,38 +24,22 @@
     <main class="app-main">
         <h1 class="app-main__titulo">Mi perfil</h1>
 
-        <div class="tabs">
-            <button type="button" class="chip" id="p-tab-datos">Datos personales</button>
-            <button type="button" class="chip" id="p-tab-pers">Personalización</button>
-        </div>
-
-        <div id="p-panel-datos">
-            <form class="form-app" id="p-form">
-                <div class="campo-app">
-                    <label for="p-nombre">Nombre</label>
-                    <input type="text" id="p-nombre" required>
-                </div>
-                <div class="campo-app">
-                    <label for="p-email">Correo electrónico</label>
-                    <input type="email" id="p-email" required>
-                </div>
-                <div class="campo-app">
-                    <label>Teléfonos</label>
-                    <div id="p-telefonos"></div>
-                    <button type="button" class="chip" id="p-add-tel" style="align-self:flex-start">＋ Agregar teléfono</button>
-                </div>
-                <button type="submit" class="cta">Guardar cambios</button>
-            </form>
-        </div>
-
-        <div id="p-panel-pers" hidden>
-            <p class="app-main__sub">Marcos de perfil desbloqueados según tus canjes.</p>
-            <div class="catalogo" id="p-marcos"></div>
-            <div class="vacio" id="p-marcos-vacio" hidden>
-                <p class="vacio__titulo">Sin marcos desbloqueados</p>
-                <p class="vacio__texto">Canjeá recompensas para desbloquear marcos de perfil.</p>
+        <form class="form-app" id="p-form">
+            <div class="campo-app">
+                <label for="p-nombre">Nombre</label>
+                <input type="text" id="p-nombre" required>
             </div>
-        </div>
+            <div class="campo-app">
+                <label for="p-email">Correo electrónico</label>
+                <input type="email" id="p-email" required>
+            </div>
+            <div class="campo-app">
+                <label>Teléfonos</label>
+                <div id="p-telefonos"></div>
+                <button type="button" class="chip" id="p-add-tel" style="align-self:flex-start">＋ Agregar teléfono</button>
+            </div>
+            <button type="submit" class="cta">Guardar cambios</button>
+        </form>
     </main>
 
     <div data-shell-footer></div>
@@ -67,14 +50,6 @@
             <input type="text" class="p-tel" placeholder="09X XXX XXX"
                    style="flex:1;background:var(--superficie2);border:1px solid var(--borde);border-radius:10px;color:var(--texto);font:inherit;padding:10px 12px">
             <button type="button" class="chip" data-quitar>✕</button>
-        </div>
-    </template>
-
-    <!-- Molde de una tarjeta de marco desbloqueado (valores de muestra). -->
-    <template id="tpl-marco">
-        <div class="panel" style="cursor:pointer">
-            <div class="principal" data-campo="nombre">Marco «Reciclador»</div>
-            <div class="secundario">Desbloqueado el <span data-campo="fecha">01/01/2026</span></div>
         </div>
     </template>
 
