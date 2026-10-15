@@ -101,6 +101,8 @@
 -- =====================================================================
 
 DROP DATABASE IF EXISTS cathartes;
+SET NAMES utf8mb4;
+
 CREATE DATABASE cathartes
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;

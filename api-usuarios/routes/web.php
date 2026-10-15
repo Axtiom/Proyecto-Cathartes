@@ -22,3 +22,12 @@ $router->get('/yo', 'AccesoController', 'yo');
 // Perfil (cualquier rol)
 $router->get('/perfil', 'PerfilController', 'mostrar');
 $router->post('/perfil', 'PerfilController', 'actualizar');
+
+// Gestión de cuentas (solo administrador)
+$router->get('/usuarios', 'UsuarioController', 'listar');            // ?rol= &estado= &q=
+$router->get('/usuarios/detalle', 'UsuarioController', 'detalle');   // ?id=N
+$router->post('/usuarios', 'UsuarioController', 'crear');
+$router->put('/usuarios', 'UsuarioController', 'actualizar');        // ?id=N
+$router->delete('/usuarios', 'UsuarioController', 'baja');           // ?id=N (baja lógica)
+$router->post('/usuarios/aprobar', 'UsuarioController', 'aprobar');  // ?id=N
+$router->post('/usuarios/rechazar', 'UsuarioController', 'rechazar');// ?id=N

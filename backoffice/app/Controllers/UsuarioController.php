@@ -133,4 +133,61 @@ class UsuarioController extends Controller
         $qs = (isset($volver[0]) && $volver[0] === '?') ? $volver : '';
         $this->redirigir('usuarios' . $qs);
     }
+
+    /** Pantalla de edición de una cuenta. */
+    public function editar(): void
+    {
+        $admin = Auth::exigir();
+        $u = Usuario::detalle((int) ($_GET['id'] ?? 0));
+        if ($u === null) {
+            $this->flash('Usuario inexistente.', 'error');
+            $this->redirigir('usuarios');
+        }
+        $this->vista('usuario', [
+            'activo'        => 'usuarios',
+            'admin'         => $admin,
+            'u'             => $u,
+            'esYo'          => (int) $u['ID'] === (int) $admin['id'],
+            'esJefe'        => Usuario::esJefe((int) $admin['id']),
+            'instalaciones' => Usuario::instalaciones(),
+            'camiones'      => Usuario::camionesPara((int) $u['ID']),
+            'flash'         => $this->tomarFlash(),
+            'csrf'          => Auth::csrf(),
+        ]);
+    }
+
+    /** Guarda la edición. Solo viajan los campos que corresponden al rol de la cuenta. */
+    public function actualizar(): void
+    {
+        $admin = Auth::exigir();
+        Auth::verificarCsrf();
+        $id = (int) ($_POST['id'] ?? 0);
+        $u  = Usuario::detalle($id);
+        if ($u === null) {
+            $this->flash('Usuario inexistente.', 'error');
+            $this->redirigir('usuarios');
+        }
+
+        $d = [
+            'nombre'    => $_POST['nombre'] ?? '',
+            'email'     => $_POST['email'] ?? '',
+            'telefonos' => preg_split('/\s*,\s*/', (string) ($_POST['telefonos'] ?? '')),
+        ];
+        if (($_POST['password'] ?? '') !== '') {
+            $d['password'] = (string) $_POST['password'];   // vacío = no cambiarla
+        }
+        if ($u['rol'] === 'operario') {
+            $d['id_instalacion'] = $_POST['id_instalacion'] ?? 0;
+        } elseif ($u['rol'] === 'cuadrilla') {
+            $d['id_camion'] = $_POST['id_camion'] ?? 0;
+            $d['estado_cuadrilla'] = $_POST['estado_cuadrilla'] ?? 'en servicio';
+        } elseif ($u['rol'] === 'administrador' && isset($_POST['jefe'])) {
+            $d['jefe'] = $_POST['jefe'];
+        }
+
+        $res = Usuario::actualizar($id, $d, (int) $admin['id']);
+        $res['ok'] ? $this->flash('Usuario #' . $id . ' actualizado.')
+                   : $this->flash('No se pudo guardar: ' . $res['error'], 'error');
+        $this->redirigir('usuarios/editar?id=' . $id);
+    }
 }

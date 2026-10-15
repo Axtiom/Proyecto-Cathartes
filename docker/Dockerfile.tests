@@ -1,0 +1,12 @@
+# Imagen para correr la batería de tests (tests/run.sh) dentro de Docker.
+FROM php:8.3-cli
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends default-mysql-client curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && docker-php-ext-install pdo_mysql \
+ && curl -fsSL https://phar.phpunit.de/phpunit-9.6.phar -o /usr/local/bin/phpunit \
+ && chmod +x /usr/local/bin/phpunit
+
+WORKDIR /app
+COPY . /app

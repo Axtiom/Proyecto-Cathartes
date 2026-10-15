@@ -23,6 +23,8 @@ $router->get('/usuarios', 'UsuarioController', 'index');
 $router->post('/usuarios/aprobar', 'UsuarioController', 'aprobar');
 $router->post('/usuarios/rechazar', 'UsuarioController', 'rechazar');
 $router->post('/usuarios/crear', 'UsuarioController', 'crear');
+$router->get('/usuarios/editar', 'UsuarioController', 'editar');
+$router->post('/usuarios/actualizar', 'UsuarioController', 'actualizar');
 
 // Incidencias
 $router->get('/incidencias', 'IncidenciaController', 'index');
@@ -50,6 +52,14 @@ $router->get('/instalaciones', 'InstalacionController', 'index');
 $router->get('/instalaciones/editar', 'InstalacionController', 'editar');
 $router->post('/instalaciones/crear', 'InstalacionController', 'crear');
 $router->post('/instalaciones/actualizar', 'InstalacionController', 'actualizar');
+$router->post('/instalaciones/eliminar', 'InstalacionController', 'eliminar');
+
+// Maquinaria de las instalaciones (CRUD básico)
+$router->get('/maquinaria', 'MaquinariaController', 'index');
+$router->get('/maquinaria/editar', 'MaquinariaController', 'editar');
+$router->post('/maquinaria/crear', 'MaquinariaController', 'crear');
+$router->post('/maquinaria/actualizar', 'MaquinariaController', 'actualizar');
+$router->post('/maquinaria/eliminar', 'MaquinariaController', 'eliminar');
 
 // Rutas
 $router->get('/rutas', 'RutaController', 'index');

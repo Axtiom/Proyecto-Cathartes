@@ -69,6 +69,21 @@ class InstalacionController extends Controller
         $this->redirigir('instalaciones/editar?id=' . $id);
     }
 
+    /** Borra la instalación solo si no tiene rutas, operarios ni maquinaria. */
+    public function eliminar(): void
+    {
+        Auth::exigir();
+        Auth::verificarCsrf();
+        $id  = (int) ($_POST['id'] ?? 0);
+        $res = Instalacion::eliminar($id);
+        if ($res['ok']) {
+            $this->flash('Instalación #' . $id . ' eliminada.');
+            $this->redirigir('instalaciones');
+        }
+        $this->flash('No se pudo eliminar: ' . $res['error'], 'error');
+        $this->redirigir('instalaciones/editar?id=' . $id);
+    }
+
     private function campos(): array
     {
         return [

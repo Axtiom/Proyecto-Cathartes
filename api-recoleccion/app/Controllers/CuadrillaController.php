@@ -26,7 +26,8 @@ class CuadrillaController extends Controller
                 'rutas'  => Recoleccion::rutasDeCuadrilla($usuario['id']),
             ]);
         } catch (Throwable $e) {
-            $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            error_log('[' . static::class . '] ' . $e->getMessage());
+            $this->json(['ok' => false, 'error' => 'Error interno del servidor'], 500);
         }
     }
 }

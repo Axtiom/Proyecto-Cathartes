@@ -58,7 +58,8 @@ class VecinoController extends Controller
         try {
             $this->json(['ok' => true, 'metricas' => Incidencia::metricas((int) $v['id'])]);
         } catch (Throwable $e) {
-            $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            error_log('[' . static::class . '] ' . $e->getMessage());
+            $this->json(['ok' => false, 'error' => 'Error interno del servidor'], 500);
         }
     }
 
@@ -69,7 +70,8 @@ class VecinoController extends Controller
         try {
             $this->json(['ok' => true, 'items' => Incidencia::delVecino((int) $v['id'], $limite)]);
         } catch (Throwable $e) {
-            $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            error_log('[' . static::class . '] ' . $e->getMessage());
+            $this->json(['ok' => false, 'error' => 'Error interno del servidor'], 500);
         }
     }
 
@@ -88,7 +90,8 @@ class VecinoController extends Controller
             unset($inc['foto']); // el nombre de archivo no se expone; la foto va por su endpoint
             $this->json(['ok' => true, 'incidencia' => $inc]);
         } catch (Throwable $e) {
-            $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            error_log('[' . static::class . '] ' . $e->getMessage());
+            $this->json(['ok' => false, 'error' => 'Error interno del servidor'], 500);
         }
     }
 
@@ -147,7 +150,8 @@ class VecinoController extends Controller
 
             $this->json(['ok' => true, 'id' => $id, 'mensaje' => 'Incidencia reportada.'], 201);
         } catch (Throwable $e) {
-            $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            error_log('[' . static::class . '] ' . $e->getMessage());
+            $this->json(['ok' => false, 'error' => 'Error interno del servidor'], 500);
         }
     }
 

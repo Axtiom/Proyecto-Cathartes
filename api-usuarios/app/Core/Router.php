@@ -22,6 +22,16 @@ class Router
         $this->registrar('POST', $path, $controller, $action);
     }
 
+    public function put(string $path, string $controller, string $action): void
+    {
+        $this->registrar('PUT', $path, $controller, $action);
+    }
+
+    public function delete(string $path, string $controller, string $action): void
+    {
+        $this->registrar('DELETE', $path, $controller, $action);
+    }
+
     private function registrar(string $method, string $path, string $controller, string $action): void
     {
         $this->rutas[] = compact('method', 'path', 'controller', 'action');

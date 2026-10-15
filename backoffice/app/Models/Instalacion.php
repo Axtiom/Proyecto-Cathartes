@@ -152,6 +152,25 @@ class Instalacion
     }
 
     /** Porcentaje de llenado (0-100+). Con capacidad 0 devuelve 0, no divide. */
+    /**
+     * Borrado físico, solo si NADA depende de la instalación (rutas, operarios, maquinaria).
+     * Es lo que ya imponen las FK con ON DELETE RESTRICT; acá se anticipa para dar un
+     * mensaje claro en vez de un error de base de datos.
+     */
+    public static function eliminar(int $id): array
+    {
+        if (self::porId($id) === null) {
+            return ['ok' => false, 'error' => 'Instalación inexistente.'];
+        }
+        $dep = self::dependencias($id);
+        $r = count($dep['rutas']); $o = count($dep['operarios']); $m = $dep['maquinaria'];
+        if ($r + $o + $m > 0) {
+            return ['ok' => false, 'error' => "Tiene {$r} ruta(s), {$o} operario(s) y {$m} máquina(s) asociadas: reasignalas antes de eliminarla."];
+        }
+        Database::conexion()->prepare('DELETE FROM instalacion WHERE ID = ?')->execute([$id]);
+        return ['ok' => true];
+    }
+
     public static function porcentaje(array $i): int
     {
         $cap = (int) ($i['capacidad'] ?? 0);

@@ -66,6 +66,25 @@ class Auth
         ];
     }
 
+    /**
+     * Guard de API con rol: igual que proteger() y además exige que el rol de la
+     * sesión esté entre los permitidos. Si no, responde 403 JSON y corta.
+     * El control se hace acá, en el backend; nunca depende de lo que oculte el frontend.
+     *
+     * @return array{id:int,rol:?string,nombre:string,email:string}
+     */
+    public static function exigirRol(string ...$roles): array
+    {
+        $ctx = self::proteger();
+        if (!in_array($ctx['rol'], $roles, true)) {
+            http_response_code(403);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok' => false, 'error' => 'No tenés permiso para esta acción'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        return $ctx;
+    }
+
     // ------------------------------------------------- guard backoffice ----
     /** Exige admin autenticado. Devuelve ['id','nombre']. Corta el flujo si no. */
     public static function exigir(): array

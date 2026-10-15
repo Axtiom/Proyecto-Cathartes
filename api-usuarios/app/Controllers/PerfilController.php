@@ -21,7 +21,8 @@ class PerfilController extends Controller
             }
             $this->json(['ok' => true, 'perfil' => $p]);
         } catch (Throwable $e) {
-            $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            error_log('[' . static::class . '] ' . $e->getMessage());
+            $this->json(['ok' => false, 'error' => 'Error interno del servidor'], 500);
         }
     }
 
@@ -49,7 +50,8 @@ class PerfilController extends Controller
             $p = Perfil::actualizar((int) $ctx['id'], $nombre, $email, $telefonos);
             $this->json(['ok' => true, 'perfil' => $p, 'mensaje' => 'Perfil actualizado.']);
         } catch (Throwable $e) {
-            $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            error_log('[' . static::class . '] ' . $e->getMessage());
+            $this->json(['ok' => false, 'error' => 'Error interno del servidor'], 500);
         }
     }
 }

@@ -32,6 +32,11 @@
 | BUG-014 | 2026-07-27 | Frontend / chrome por rol | Cuadrilla y operario veían el header y el footer del vecino | alta      | RESUELTO |
 | BUG-015 | 2026-07-27 | Frontend / red | Un request colgado dejaba la pantalla en «Cargando…» para siempre | media     | RESUELTO |
 | BUG-016 | 2026-07-27 | Frontend / chrome por rol | Con el partial en caché no se dibujaba ningún header y no se podía cerrar sesión | alta      | RESUELTO |
+| BUG-017 | 2026-10-14 | Seguridad / config | Los `.env.example` traían una contraseña de base real | crítica   | RESUELTO |
+| BUG-018 | 2026-10-14 | APIs / seguridad | Los 500 devolvían el mensaje de la excepción al cliente | alta      | RESUELTO |
+| BUG-019 | 2026-10-14 | APIs / seguridad | `/health` (público) mostraba el error de MySQL con usuario y host | media     | RESUELTO |
+| BUG-020 | 2026-10-14 | BD / auditoría | Dos acciones sobre la misma cuenta en el mismo segundo daban 500 (PK de `gestiona`/`autorizacion`) | media     | RESUELTO |
+| BUG-021 | 2026-10-14 | BD / seed | Acentos rotos al cargar el seed y datos de prueba sin sentido | baja      | RESUELTO |
 
 ---
 
@@ -835,3 +840,28 @@ los tres roles.
 inusable». Cuando un componente compartido no se puede montar, el degradado tiene que
 conservar las acciones de escape — salir de la sesión, volver al inicio — y perder solo
 lo que no se puede resolver con seguridad.
+
+---
+
+### BUG-017 — Los `.env.example` traían una contraseña de base real
+- **Síntoma:** los cuatro `.env.example` (versionados) tenían `DB_USER=root` y una `DB_PASS` con una contraseña que parecía real.
+- **Causa:** se copió el `.env` de una máquina de desarrollo como plantilla.
+- **Arreglo:** plantilla con usuario propio (`cathartes_app`) y valor de ejemplo. **Pendiente fuera del código:** si esa contraseña se usó en algún servidor, cambiarla, porque sigue en el historial de Git.
+
+### BUG-018 — Los 500 devolvían el mensaje de la excepción
+- **Síntoma:** ante un error interno, 11 controladores respondían `{"error": "<mensaje de PDO>"}`, con nombres de tablas, columnas y consultas.
+- **Causa:** `catch (Throwable $e)` que pasaba `$e->getMessage()` al JSON.
+- **Arreglo:** el detalle va a `error_log()` y el cliente recibe «Error interno del servidor». Los endpoints nuevos ni siquiera capturan: los cubre el manejador global.
+
+### BUG-019 — `/health` público mostraba el error de MySQL
+- **Síntoma:** con la base caída, `GET /health` (sin sesión) devolvía el texto del error, con el usuario y el host de la conexión.
+- **Arreglo:** el detalle se loguea; la respuesta es `{"ok": false, "db": false}` con HTTP 503, que además permite que un healthcheck de Docker lo detecte (antes devolvía 200 aunque la base estuviera caída).
+
+### BUG-020 — Choque de clave primaria en la auditoría
+- **Síntoma:** crear y dar de baja a un administrador en el mismo segundo producía un error 500 (`Duplicate entry ... for key 'PRIMARY'`).
+- **Causa:** `gestiona` y `autorizacion` tienen PK `(admin, cuenta, fecha)` con `fecha` al segundo; dos acciones iguales sobre la misma cuenta chocan.
+- **Arreglo:** el alta del registro de auditoría reintenta corriendo la fecha un segundo. No se cambió el esquema. Cubierto por un test.
+
+### BUG-021 — Acentos rotos y datos de prueba sin sentido
+- **Síntoma:** al importar `seed.sql` con un cliente en latin1, `Pérez` quedaba como `PÃ©rez`. Además había un vertedero llamado «don ramon / me lo acaco de inventar», una ruta «helo» y un camión de 100 kg.
+- **Arreglo:** `SET NAMES utf8mb4` al inicio de `BD.sql` y `seed.sql`; datos de prueba reemplazados por otros coherentes y ampliados.

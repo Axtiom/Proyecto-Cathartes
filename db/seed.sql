@@ -44,6 +44,7 @@
 --  leen muestran su estado vacío, que es el comportamiento correcto.
 -- =====================================================================
 
+SET NAMES utf8mb4;
 USE cathartes;
 
 -- ---------------------------------------------------------------------
@@ -55,19 +56,28 @@ USE cathartes;
 -- ---------------------------------------------------------------------
 INSERT INTO instalacion (ID, nombre, ubicacion, latitud, longitud, capacidad, ocupacion_actual, tipo) VALUES
 (1, 'Centro de Acopio Buceo', 'Av. Rivera 3900, Buceo, Montevideo', -34.907500, -56.138500,  1000,  850, 'centro de acopio'),
-(2, 'vertedero don ramon',    'me lo acaco de inventar',                  NULL,       NULL, 10000, 6878, 'vertedero');
+(2, 'Vertedero Felipe Cardoso', 'Camino Felipe Cardoso, Montevideo', NULL, NULL, 10000, 6878, 'vertedero');
 
 -- ---------------------------------------------------------------------
--- 2) Camiones (ninguno dado de baja)
+-- 2) Camiones (uno en mantenimiento y uno dado de baja, para probar los estados)
 --    El 1 lo tiene asignado la cuadrilla; el 2 queda libre, para poder
 --    probar la reasignación desde la pantalla de Cuadrillas.
 -- ---------------------------------------------------------------------
 INSERT INTO camion (ID, matricula, modelo, capacidad, estado, fecha_baja, motivo_baja) VALUES
-(1, 'EME 542', 'Mercedes-Benz Atego',    100, 'funcional', NULL, NULL),
-(2, 'ARE STP', 'Mercedes-Benz Atego', 100000, 'funcional', NULL, NULL);
+(1, 'EME 542', 'Mercedes-Benz Atego',  12000, 'funcional',        NULL, NULL),
+(2, 'ARE STP', 'Mercedes-Benz Atego',  10000, 'funcional',        NULL, NULL),
+(3, 'SBA 1234', 'Volvo FE',            11000, 'en mantenimiento', NULL, NULL),
+(4, 'SAB 0987', 'Iveco Eurocargo',      9000, 'dado de baja',     DATE_SUB(NOW(), INTERVAL 20 DAY), 'Fin de vida útil: la reparación cuesta más que el camión');
 
 -- ---------------------------------------------------------------------
--- 3) Usuarios (todos activos; misma contraseña Cathartes2026)
+-- 2b) Maquinaria de las instalaciones
+INSERT INTO maquinaria (ID, modelo, tipo, estado, ID_instalacion) VALUES
+(1, 'Caterpillar D6',  'bulldozer',    'funcional',        2),
+(2, 'Komatsu WA380',   'cargadora',    'en mantenimiento', 2),
+(3, 'Bomag BC 772',    'compactadora', 'funcional',        2),
+(4, 'Hyundai HX220',   'excavadora',   'no funcional',     1);
+
+-- 3) Usuarios (misma contraseña Cathartes2026; los ID 6 y 7 son solicitudes pendientes de aprobación)
 -- ---------------------------------------------------------------------
 INSERT INTO usuario (ID, nombre, email, `contrasena`, estado) VALUES
 (1, 'Galvan de Saero', 'admin@cathartes.uy',     '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo'),
@@ -76,7 +86,9 @@ INSERT INTO usuario (ID, nombre, email, `contrasena`, estado) VALUES
 (4, 'Juan Pérez',      'vecino@correo.com',      '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo'),
 -- Segundo administrador con jefe='no' (Fase 4.1): necesario para demostrar RN4
 -- (un admin común NO puede crear ni dar de baja administradores).
-(5, 'Bruno Contralor', 'admin2@cathartes.uy',    '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo');
+(5, 'Bruno Contralor', 'admin2@cathartes.uy',    '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'activo'),
+(6, 'María López',     'maria.lopez@correo.com', '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'no activo'),
+(7, 'Diego Rodríguez', 'diego.rodriguez@correo.com', '$2y$10$z5mGXNm4VRBFHo/.c9.izev.4odeY.Kbjzmu8twLnhyLnA9lhDZUy', 'no activo');
 
 -- ---------------------------------------------------------------------
 -- 4) Teléfonos (uno por usuario, formato uruguayo)
@@ -88,7 +100,9 @@ INSERT INTO usuario_telefono (id_tel, telefono, ID_usuario) VALUES
 (2, '092 345 678', 2),
 (3, '093 456 789', 3),
 (8, '094 567 890', 4),
-(9, '095 111 222', 5);
+(9, '095 111 222', 5),
+(10, '096 222 333', 6),
+(11, '097 333 444', 7);
 
 -- ---------------------------------------------------------------------
 -- 5) Subtipos de usuario (el rol se deduce de acá, no es una columna)
@@ -98,7 +112,7 @@ INSERT INTO administrador (ID_usuario, jefe) VALUES (5, 'no');   -- admin común
 INSERT INTO operario (ID_usuario, ID_instalacion) VALUES (2, 1);
 -- usuario.nombre ES el nombre del equipo (la cuadrilla es una cuenta compartida).
 INSERT INTO cuadrilla (ID_usuario, ID_camion, estado) VALUES (3, 1, 'en servicio');
-INSERT INTO vecino (ID_usuario) VALUES (4);
+INSERT INTO vecino (ID_usuario) VALUES (4), (6), (7);
 
 -- ---------------------------------------------------------------------
 -- 6) Rutas
@@ -109,7 +123,7 @@ INSERT INTO vecino (ID_usuario) VALUES (4);
 INSERT INTO ruta (ID, nombre, zona, frecuencia, estado, ID_instalacion) VALUES
 (1, 'Buceo — Pocitos',          'Buceo',   'diaria',                     'activa',   1),
 (2, 'Pocitos — Punta Carretas', 'Pocitos', 'lunes, miércoles y viernes', 'activa',   1),
-(3, 'helo',                     'Pocitos', 'miercoles',                  'inactiva', 1);
+(3, 'Pocitos — Cordón',         'Pocitos', 'miércoles',                'inactiva', 1);
 
 -- `toma` es un HISTORIAL, no una asignación viva: su PK incluye `fecha`, y
 -- "la ruta actual de la cuadrilla" es la toma más reciente. Con dos filas se
@@ -119,7 +133,7 @@ INSERT INTO toma (ID_cuadrilla, ID_ruta, fecha) VALUES
 (3, 2, DATE_SUB(NOW(), INTERVAL  287 MINUTE));   -- ~4,8 horas (la vigente)
 
 -- ---------------------------------------------------------------------
--- 7) Contenedores (ninguno dado de baja)
+-- 7) Contenedores (uno dado de baja, para probar la baja lógica)
 --    Repartidos en las tres rutas, como quedaron tras usar el panel
 --    "por qué contenedores pasa" de la pantalla de Rutas. Los tres estados
 --    operativos están representados, para los badges y el color del mapa.
@@ -127,7 +141,12 @@ INSERT INTO toma (ID_cuadrilla, ID_ruta, fecha) VALUES
 INSERT INTO contenedor (ID, ubicacion, latitud, longitud, tipo, estado, fecha_baja, motivo_baja, ID_ruta) VALUES
 (1, 'Av. Rivera 3245, Buceo',   -34.904800, -56.142000, 'basura',     'funcional',    NULL, NULL, 3),
 (2, 'Br. España 2650, Pocitos', -34.911000, -56.150000, 'basura',     'desbordado',   NULL, NULL, 1),
-(3, 'Av. Brasil 3100, Pocitos', -34.909500, -56.147000, 'reciclable', 'no funcional', NULL, NULL, 2);
+(3, 'Av. Brasil 3100, Pocitos', -34.909500, -56.147000, 'reciclable', 'no funcional', NULL, NULL, 2),
+(4, 'Av. Italia 2900, Buceo',   -34.896000, -56.148000, 'basura',     'funcional',    NULL, NULL, 3),
+(5, 'Bvar. Artigas 1200, Parque Rodó', -34.914000, -56.169000, 'reciclable', 'funcional', NULL, NULL, 1),
+(6, 'Av. 18 de Julio 1850, Centro', -34.905000, -56.186000, 'basura', 'desbordado',   NULL, NULL, 2),
+(7, 'Rambla Rep. de México 6200, Carrasco', -34.893000, -56.059000, 'reciclable', 'funcional', NULL, NULL, 3),
+(8, 'Gral. Flores 2100, La Blanqueada', -34.886000, -56.165000, 'basura', 'dado de baja', DATE_SUB(NOW(), INTERVAL 15 DAY), 'Vandalizado: contenedor quemado', 2);
 
 -- ---------------------------------------------------------------------
 -- 8) Incidencias (todas reportadas por el vecino, ID 4)

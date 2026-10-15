@@ -1,0 +1,69 @@
+# Cathartes — entorno completo con un solo comando:
+#
+#   cp .env.example .env        # y cambiar las claves
+#   docker compose up -d --build
+#   -> http://localhost:8080/landing-page/
+#
+# Tests:  docker compose --profile tests run --rm tests
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?definí DB_ROOT_PASSWORD en .env}
+      MYSQL_DATABASE: ${DB_NAME:-cathartes}
+      MYSQL_USER: ${DB_USER:-cathartes_app}
+      MYSQL_PASSWORD: ${DB_PASS:?definí DB_PASS en .env}
+    volumes:
+      - db_data:/var/lib/mysql
+      # Se ejecutan solo la PRIMERA vez (cuando el volumen está vacío), en orden alfabético.
+      - ./db/BD.sql:/docker-entrypoint-initdb.d/01-estructura.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-datos-de-prueba.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # La base NO se publica al host: solo la ve la app dentro de la red de Docker.
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-cathartes}
+      DB_USER: ${DB_USER:-cathartes_app}
+      DB_PASS: ${DB_PASS}
+      # Idéntico para las 4 apps: api-usuarios emite la cookie y las demás la validan.
+      APP_TOKEN_SECRET: ${APP_TOKEN_SECRET:?definí APP_TOKEN_SECRET en .env}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      APP_DEBUG: "false"
+      MAIL_DRIVER: ${MAIL_DRIVER:-stub}
+    volumes:
+      - uploads:/var/www/html/storage/uploads
+
+  tests:
+    profiles: ["tests"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.tests
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_NAME: cathartes_test            # los tests solo corren contra una base *_test
+      DB_USER: cathartes_test
+      DB_PASS: ${DB_TEST_PASS:-cathartes_test_pass}
+      DB_PASS_ADMIN: ${DB_ROOT_PASSWORD}
+    command: ["bash", "tests/docker_run.sh"]
+
+volumes:
+  db_data:
+  uploads:

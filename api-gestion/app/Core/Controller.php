@@ -31,6 +31,31 @@ abstract class Controller
         echo json_encode($datos, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
+    /**
+     * Traduce el resultado de un Model ({ok, error?, codigo?}) a la respuesta JSON.
+     * Errores: usa el `codigo` que puso el Model (403, 404, 409...) o 400 por defecto.
+     * Si va bien, responde $okCodigo junto con $extra.
+     */
+    protected function resultado(array $r, int $okCodigo = 200, array $extra = []): void
+    {
+        if (!($r['ok'] ?? false)) {
+            $cuerpo = ['ok' => false, 'error' => (string) ($r['error'] ?? 'Error')];
+            if (isset($r['dependencias'])) {
+                $cuerpo['dependencias'] = $r['dependencias'];
+            }
+            $this->json($cuerpo, (int) ($r['codigo'] ?? 400));
+            return;
+        }
+        $this->json(['ok' => true] + $extra, $okCodigo);
+    }
+
+    /** Id numérico de la query string (?id=N). 0 si falta o no es válido. */
+    protected function idQuery(): int
+    {
+        $v = $_GET['id'] ?? '';
+        return (is_string($v) && ctype_digit($v)) ? (int) $v : 0;
+    }
+
     /** Redirige a una ruta de la app (con el prefijo del subdirectorio). */
     protected function redirigir(string $ruta): void
     {

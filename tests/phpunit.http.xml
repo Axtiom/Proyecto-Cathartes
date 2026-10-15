@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="bootstrap_http.php" colors="true" failOnWarning="true" cacheResult="false">
+    <testsuites><testsuite name="APIs por HTTP (roles y CRUD)"><directory>Http</directory></testsuite></testsuites>
+</phpunit>

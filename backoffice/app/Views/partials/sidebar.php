@@ -14,6 +14,7 @@ $secciones = [
     ['slug' => 'contenedores',  'ruta' => 'contenedores',   'texto' => 'Contenedores'],
     ['slug' => 'camiones',      'ruta' => 'camiones',       'texto' => 'Camiones'],
     ['slug' => 'instalaciones', 'ruta' => 'instalaciones',  'texto' => 'Instalaciones'],
+    ['slug' => 'maquinaria',    'ruta' => 'maquinaria',     'texto' => 'Maquinaria'],
     ['slug' => 'rutas',         'ruta' => 'rutas',          'texto' => 'Rutas'],
     ['slug' => 'cuadrillas',    'ruta' => 'cuadrillas',     'texto' => 'Cuadrillas'],
     ['slug' => 'informes',      'ruta' => 'informes',       'texto' => 'Informes'],

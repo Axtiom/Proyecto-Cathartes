@@ -2,9 +2,10 @@
 /**
  * Pantalla 6 — Editar instalación. Espera: $admin, $activo, $i, $dep, $flash, $csrf.
  *
- * No hay panel de baja a propósito: `instalacion` no tiene columna de estado ni
- * `fecha_baja`, y el MER está congelado. El panel de la derecha muestra lo que
- * depende de la instalación, que es lo que las FK (ON DELETE RESTRICT) protegen.
+ * No hay baja lógica a propósito: `instalacion` no tiene columna de estado ni
+ * `fecha_baja`, y el MER está congelado. En su lugar se puede ELIMINAR, pero solo si
+ * nada depende de ella (es lo que las FK con ON DELETE RESTRICT protegen). El panel de
+ * la derecha muestra lo que depende de la instalación.
  */
 $titulo = 'Instalación #' . (int) $i['ID'] . ' · Backoffice';
 $pc     = Instalacion::porcentaje($i);
@@ -65,9 +66,8 @@ require BASE_PATH . '/app/Views/partials/head.php';
     <div class="bo-panel">
         <h2 class="bo-panel__tit">Depende de esta instalación</h2>
         <p class="bo-sub" style="font-size:13px;margin-bottom:12px">
-            La instalación no se elimina: rutas, operarios y maquinaria la referencian y las
-            claves foráneas lo impiden. Para retirarla de operación, reasigná lo que cuelga
-            de ella y dejala sin rutas activas.
+            Rutas, operarios y maquinaria referencian a la instalación. Solo se puede eliminar
+            cuando no queda nada asociado: reasigná primero lo que cuelga de ella.
         </p>
 
         <div class="bo-dato"><span>Maquinaria</span><span><?= (int) $dep['maquinaria'] ?></span></div>
@@ -102,6 +102,23 @@ require BASE_PATH . '/app/Views/partials/head.php';
             </ul>
         <?php endif; ?>
     </div>
+</div>
+
+<?php $sinDep = !$dep['rutas'] && !$dep['operarios'] && (int) $dep['maquinaria'] === 0; ?>
+<div class="bo-panel" style="margin-top:16px">
+    <h2 class="bo-panel__tit">Eliminar instalación</h2>
+    <?php if (!$sinDep): ?>
+        <p class="bo-dim">No se puede eliminar mientras tenga rutas, operarios o maquinaria asociados.</p>
+        <button type="button" class="bo-btn bo-btn--peligro bo-btn--off" disabled>Eliminar</button>
+    <?php else: ?>
+        <p class="bo-sub" style="font-size:13px;margin-bottom:12px">No tiene nada asociado: se puede eliminar. La acción es definitiva.</p>
+        <form method="post" action="<?= e(ruta('instalaciones/eliminar')) ?>"
+              onsubmit="return confirm('¿Eliminar definitivamente la instalación #<?= (int) $i['ID'] ?>?');">
+            <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
+            <input type="hidden" name="id" value="<?= (int) $i['ID'] ?>">
+            <button type="submit" class="bo-btn bo-btn--peligro">Eliminar</button>
+        </form>
+    <?php endif; ?>
 </div>
 
 <?php require BASE_PATH . '/app/Views/partials/foot.php'; ?>

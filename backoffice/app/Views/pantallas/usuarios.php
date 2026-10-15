@@ -178,6 +178,7 @@ require BASE_PATH . '/app/Views/partials/head.php';
                             <?php endif; ?>
                         </td>
                         <td class="bo-tabla__acc">
+                            <a class="bo-btn bo-btn--sm" href="<?= e(ruta('usuarios/editar?id=' . (int) $u['ID'])) ?>"><?= $esYo ? 'Mi cuenta' : 'Editar' ?></a>
                             <?php if ($esYo): ?>
                                 <span class="bo-dim">tu cuenta</span>
                             <?php else: ?>

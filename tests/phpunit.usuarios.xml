@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="bootstrap_usuarios.php" colors="true" failOnWarning="true" cacheResult="false">
+    <testsuites><testsuite name="api-usuarios (unitarios)"><directory>Unit/Usuarios</directory></testsuite></testsuites>
+</phpunit>

@@ -11,7 +11,11 @@ class HealthController extends Controller
             Database::conexion()->query('SELECT 1');
             echo json_encode(['ok' => true, 'db' => true]);
         } catch (Throwable $e) {
-            echo json_encode(['ok' => true, 'db' => false, 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            // El detalle (usuario, host, motivo) va al log del servidor; el endpoint es público
+            // y nunca lo muestra. 503 para que un healthcheck (Docker, balanceador) lo detecte.
+            error_log('[health] ' . $e->getMessage());
+            http_response_code(503);
+            echo json_encode(['ok' => false, 'db' => false], JSON_UNESCAPED_UNICODE);
         }
     }
 }

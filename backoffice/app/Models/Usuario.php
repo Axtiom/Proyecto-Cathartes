@@ -333,16 +333,193 @@ class Usuario
     }
 
     // --------------------------------------------------------- auditoría ----
-    private static function auditar(PDO $pdo, int $idAdmin, int $idUsuario, string $accion): void
+    /**
+     * `autorizacion` y `gestiona` tienen PK (admin, cuenta, fecha) con fecha al SEGUNDO: dos
+     * acciones del mismo administrador sobre la misma cuenta dentro del mismo segundo chocaban
+     * con la PK (error 1062) y daban un error 500. Se reintenta corriendo la fecha un segundo.
+     */
+    private static function insertarAuditoria(PDO $pdo, string $tabla, int $a, int $b, string $accion): void
     {
-        $st = $pdo->prepare('INSERT INTO autorizacion (ID_admin, ID_usuario, fecha, accion) VALUES (?, ?, NOW(), ?)');
-        $st->execute([$idAdmin, $idUsuario, $accion]);
+        [$colA, $colB] = $tabla === 'autorizacion' ? ['ID_admin', 'ID_usuario'] : ['ID_ejecutor', 'ID_afectado'];
+        $sql = "INSERT INTO {$tabla} ({$colA}, {$colB}, fecha, accion) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND), ?)";
+        for ($desfase = 0; $desfase < 10; $desfase++) {
+            try {
+                $pdo->prepare($sql)->execute([$a, $b, $desfase, $accion]);
+                return;
+            } catch (PDOException $e) {
+                if ((int) ($e->errorInfo[1] ?? 0) !== 1062) {
+                    throw $e;
+                }
+            }
+        }
+        throw new RuntimeException("No se pudo registrar la auditoría en {$tabla}.");
     }
 
-    /** Auditoría reflexiva admin↔admin (creación/baja de administradores). */
+    private static function auditar(PDO $pdo, int $idAdmin, int $idUsuario, string $accion): void
+    {
+        self::insertarAuditoria($pdo, 'autorizacion', $idAdmin, $idUsuario, $accion);
+    }
+
+    /** Auditoría reflexiva admin↔admin (creación/baja/modificación de administradores). */
     private static function gestionar(PDO $pdo, int $ejecutor, int $afectado, string $accion): void
     {
-        $st = $pdo->prepare('INSERT INTO gestiona (ID_ejecutor, ID_afectado, fecha, accion) VALUES (?, ?, NOW(), ?)');
-        $st->execute([$ejecutor, $afectado, $accion]);
+        self::insertarAuditoria($pdo, 'gestiona', $ejecutor, $afectado, $accion);
+    }
+
+    // ------------------------------------------------------------ edición ----
+    /** Una cuenta con sus teléfonos y los datos de su subtipo (para la pantalla de edición). */
+    public static function detalle(int $id): ?array
+    {
+        $u = self::porId($id);
+        if ($u === null) {
+            return null;
+        }
+        $pdo = Database::conexion();
+        $u['rol'] = self::rolDe($id);
+        $st = $pdo->prepare('SELECT telefono FROM usuario_telefono WHERE ID_usuario = ? ORDER BY id_tel');
+        $st->execute([$id]);
+        $u['telefonos'] = $st->fetchAll(PDO::FETCH_COLUMN);
+        $u['id_instalacion'] = null;
+        $u['id_camion'] = null;
+        $u['estado_cuadrilla'] = null;
+        $u['jefe'] = null;
+        if ($u['rol'] === 'operario') {
+            $st = $pdo->prepare('SELECT ID_instalacion FROM operario WHERE ID_usuario = ?');
+            $st->execute([$id]);
+            $u['id_instalacion'] = (int) $st->fetchColumn();
+        } elseif ($u['rol'] === 'cuadrilla') {
+            $st = $pdo->prepare('SELECT ID_camion, estado FROM cuadrilla WHERE ID_usuario = ?');
+            $st->execute([$id]);
+            $f = $st->fetch();
+            $u['id_camion'] = $f['ID_camion'] !== null ? (int) $f['ID_camion'] : null;
+            $u['estado_cuadrilla'] = $f['estado'];
+        } elseif ($u['rol'] === 'administrador') {
+            $st = $pdo->prepare('SELECT jefe FROM administrador WHERE ID_usuario = ?');
+            $st->execute([$id]);
+            $u['jefe'] = $st->fetchColumn();
+        }
+        return $u;
+    }
+
+    /** Camiones que se le pueden asignar a una cuadrilla: los libres más el que ya tiene. */
+    public static function camionesPara(int $idUsuario): array
+    {
+        $st = Database::conexion()->prepare(
+            "SELECT ID, matricula, modelo FROM camion
+             WHERE estado <> 'dado de baja'
+               AND (ID NOT IN (SELECT ID_camion FROM cuadrilla WHERE ID_camion IS NOT NULL)
+                    OR ID IN (SELECT ID_camion FROM cuadrilla WHERE ID_usuario = ?))
+             ORDER BY matricula"
+        );
+        $st->execute([$idUsuario]);
+        return $st->fetchAll();
+    }
+
+    private static function falla(string $mensaje, int $codigo = 400): array
+    {
+        return ['ok' => false, 'error' => $mensaje, 'codigo' => $codigo];
+    }
+
+    /**
+     * Edita una cuenta (parcial: solo cambia lo que viene en $d). El rol no se cambia.
+     * Mismas reglas que PUT /usuarios de api-usuarios: un administrador solo lo edita un
+     * jefe o él mismo (RN3); la jefatura la cambia solo un jefe y nunca se deja sin jefe (RN4).
+     * Claves de $d: nombre, email, password, telefonos (lista), id_instalacion, id_camion,
+     * estado_cuadrilla, jefe.
+     * @return array{ok:bool,error?:string,codigo?:int}
+     */
+    public static function actualizar(int $id, array $d, int $idAdmin): array
+    {
+        $u = self::detalle($id);
+        if ($u === null) return self::falla('Usuario inexistente.', 404);
+        $rol = $u['rol'];
+        if ($rol === 'administrador' && $id !== $idAdmin && !self::esJefe($idAdmin)) {
+            return self::falla('Solo un administrador jefe puede modificar a otros administradores.', 403);
+        }
+        $pdo = Database::conexion();
+
+        $nombre = array_key_exists('nombre', $d) ? trim((string) $d['nombre']) : null;
+        $email  = array_key_exists('email', $d) ? trim((string) $d['email']) : null;
+        $pass   = array_key_exists('password', $d) ? (string) $d['password'] : null;
+        if ($nombre !== null && ($nombre === '' || mb_strlen($nombre) > 100)) return self::falla('El nombre es obligatorio (hasta 100 caracteres).');
+        if ($email !== null) {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 150) return self::falla('El correo no es válido.');
+            $st = $pdo->prepare('SELECT 1 FROM usuario WHERE email = ? AND ID <> ?');
+            $st->execute([$email, $id]);
+            if ($st->fetchColumn()) return self::falla('Ya existe un usuario con ese correo.', 409);
+        }
+        if ($pass !== null && strlen($pass) < 8) return self::falla('La contraseña debe tener al menos 8 caracteres.');
+
+        $tels = null;
+        if (array_key_exists('telefonos', $d)) {
+            $tels = array_values(array_filter(array_map(fn ($x) => trim((string) $x), (array) $d['telefonos']), fn ($x) => $x !== ''));
+            if (!$tels) return self::falla('Ingresá al menos un teléfono.');
+            foreach ($tels as $t) {
+                if (!preg_match('/^[0-9 +()\-]{6,20}$/', $t)) return self::falla('El teléfono "' . $t . '" no es válido (solo números, espacios, + ( ) -).');
+            }
+        }
+
+        $camion = $estadoCuad = $instalacion = $jefeNuevo = null;
+        $cambiaCamion = false;
+        if ($rol === 'operario' && array_key_exists('id_instalacion', $d)) {
+            $instalacion = (int) $d['id_instalacion'];
+            $st = $pdo->prepare('SELECT 1 FROM instalacion WHERE ID = ?');
+            $st->execute([$instalacion]);
+            if (!$st->fetchColumn()) return self::falla('La instalación no existe.');
+        }
+        if ($rol === 'cuadrilla') {
+            if (array_key_exists('id_camion', $d)) {
+                $cambiaCamion = true;
+                $camion = (int) $d['id_camion'] > 0 ? (int) $d['id_camion'] : null;
+                if ($camion !== null) {
+                    $st = $pdo->prepare('SELECT estado FROM camion WHERE ID = ?');
+                    $st->execute([$camion]);
+                    $est = $st->fetchColumn();
+                    if ($est === false) return self::falla('El camión no existe.');
+                    if ($est === 'dado de baja') return self::falla('El camión está dado de baja.', 409);
+                    $st = $pdo->prepare('SELECT 1 FROM cuadrilla WHERE ID_camion = ? AND ID_usuario <> ?');
+                    $st->execute([$camion, $id]);
+                    if ($st->fetchColumn()) return self::falla('Ese camión ya está asignado a otra cuadrilla.', 409);
+                }
+            }
+            if (array_key_exists('estado_cuadrilla', $d)) {
+                if (!in_array($d['estado_cuadrilla'], ['en servicio', 'fuera de servicio'], true)) return self::falla('Estado de cuadrilla inválido.');
+                $estadoCuad = $d['estado_cuadrilla'];
+            }
+        }
+        if ($rol === 'administrador' && array_key_exists('jefe', $d)) {
+            if (!in_array($d['jefe'], ['si', 'no'], true)) return self::falla('El campo jefe es "si" o "no".');
+            if ($d['jefe'] !== $u['jefe']) {
+                if (!self::esJefe($idAdmin)) return self::falla('Solo un administrador jefe puede cambiar la jefatura.', 403);
+                if ($d['jefe'] === 'no' && self::esUltimoJefe($id)) return self::falla('No se puede quitar la jefatura al último administrador jefe activo.', 409);
+                $jefeNuevo = $d['jefe'];
+            }
+        }
+
+        $pdo->beginTransaction();
+        try {
+            if ($nombre !== null) $pdo->prepare('UPDATE usuario SET nombre = ? WHERE ID = ?')->execute([$nombre, $id]);
+            if ($email !== null)  $pdo->prepare('UPDATE usuario SET email = ? WHERE ID = ?')->execute([$email, $id]);
+            if ($pass !== null)   $pdo->prepare('UPDATE usuario SET `contrasena` = ? WHERE ID = ?')->execute([password_hash($pass, PASSWORD_DEFAULT), $id]);
+            if ($tels !== null) {
+                $pdo->prepare('DELETE FROM usuario_telefono WHERE ID_usuario = ?')->execute([$id]);
+                foreach ($tels as $t) {
+                    $pdo->prepare('INSERT INTO usuario_telefono (telefono, ID_usuario) VALUES (?, ?)')->execute([$t, $id]);
+                }
+            }
+            if ($instalacion !== null) $pdo->prepare('UPDATE operario SET ID_instalacion = ? WHERE ID_usuario = ?')->execute([$instalacion, $id]);
+            if ($cambiaCamion)         $pdo->prepare('UPDATE cuadrilla SET ID_camion = ? WHERE ID_usuario = ?')->execute([$camion, $id]);
+            if ($estadoCuad !== null)  $pdo->prepare('UPDATE cuadrilla SET estado = ? WHERE ID_usuario = ?')->execute([$estadoCuad, $id]);
+            if ($jefeNuevo !== null) {
+                $pdo->prepare('UPDATE administrador SET jefe = ? WHERE ID_usuario = ?')->execute([$jefeNuevo, $id]);
+                self::gestionar($pdo, $idAdmin, $id, 'modificacion');
+            }
+            $pdo->commit();
+            return ['ok' => true];
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            error_log('[backoffice] Usuario::actualizar: ' . $e->getMessage());
+            return self::falla('No se pudo guardar los cambios.', 500);
+        }
     }
 }

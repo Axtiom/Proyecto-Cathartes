@@ -22,7 +22,8 @@ class EstadisticasController extends Controller
                 'por_zona' => Estadisticas::porZona(),
             ]);
         } catch (Throwable $e) {
-            $this->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            error_log('[' . static::class . '] ' . $e->getMessage());
+            $this->json(['ok' => false, 'error' => 'Error interno del servidor'], 500);
         }
     }
 }
