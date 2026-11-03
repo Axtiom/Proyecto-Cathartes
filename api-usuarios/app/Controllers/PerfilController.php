@@ -6,7 +6,7 @@ require_once BASE_PATH . '/app/Models/Perfil.php';
 /**
  * Perfil del usuario en sesión (Fase 2 · Tanda B). Protegido; cualquier rol.
  *   GET  /perfil  -> nombre, email, teléfonos
- *   POST /perfil  -> actualiza nombre, email, teléfonos (email UNIQUE validado)
+ *   POST /perfil  -> actualiza nombre, email, teléfonos (email UNIQUE validado) 
  */
 class PerfilController extends Controller
 {
