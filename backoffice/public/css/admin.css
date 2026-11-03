@@ -338,3 +338,21 @@ body.bo--centrado { display: flex; align-items: center; justify-content: center;
     .bo-main { padding: 20px 16px; }
     .bo-encab { flex-direction: column; }
 }
+
+/* Globito de avisos sin leer junto a «Notificaciones» */
+.bo-nav__n {
+    display: inline-block; min-width: 18px; padding: 1px 6px; margin-left: 6px;
+    border-radius: 999px; background: var(--ambar); color: #231600;
+    font-size: 11px; font-weight: 700; line-height: 16px; text-align: center;
+}
+
+/* Lista de notificaciones */
+.bo-notif { display: flex; flex-direction: column; gap: 8px; }
+.bo-notif__item {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+    padding: 12px 14px; border: 1px solid var(--borde); border-radius: var(--radio-sm); background: var(--superficie);
+}
+.bo-notif__item--nueva { border-color: rgba(245, 181, 74, 0.45); background: var(--superficie2); }
+.bo-notif__msg { margin: 0 0 4px; font-size: 14px; }
+.bo-notif__meta { font-size: 12px; color: var(--texto-tenue2); }
+.bo-notif__acc { display: flex; gap: 6px; flex-shrink: 0; }

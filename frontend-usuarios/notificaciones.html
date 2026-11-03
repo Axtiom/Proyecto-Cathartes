@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     Pantalla: NOTIFICACIONES (vecino, cuadrilla y operario).
+     Datos: API Usuarios (GET /notificaciones, POST /notificaciones/leer y /leer-todas).
+     JS que la acompaña: js/pantallas/notificaciones.js
+     Cada persona ve solo las suyas (el backend toma el usuario de la sesión).
+============================================================================= -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificaciones · Cathartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="app">
+    <div data-shell-header></div>
+
+    <main class="app-main">
+        <h1 class="app-main__titulo">Notificaciones</h1>
+        <p class="app-main__sub">Los avisos sobre tus incidencias y tu trabajo.</p>
+
+        <div class="notif-barra">
+            <div class="chips" id="chips">
+                <button type="button" class="chip chip--activo" data-filtro="todas">Todas</button>
+                <button type="button" class="chip" data-filtro="nuevas">Sin leer <span id="n-nuevas">0</span></button>
+            </div>
+            <button type="button" class="chip" id="btn-todas" hidden>Marcar todas como leídas</button>
+        </div>
+
+        <section data-region="notificaciones">
+            <div class="vacio" data-estado="cargando"><p class="vacio__titulo">Cargando…</p></div>
+            <div class="vacio" data-estado="vacio" hidden>
+                <p class="vacio__titulo" id="vacio-titulo">Sin notificaciones</p>
+                <p class="vacio__texto" id="vacio-texto">Cuando haya novedades, te avisamos acá.</p>
+            </div>
+            <div class="vacio vacio--error" data-estado="error" hidden>
+                <p class="vacio__titulo">No pudimos cargar tus notificaciones</p>
+                <p class="vacio__texto">Probá de nuevo en un momento.</p>
+            </div>
+            <div class="notif" id="lista" data-contenido hidden></div>
+        </section>
+    </main>
+
+    <div data-shell-footer></div>
+
+    <!-- Molde de una notificación (el texto de muestra se reemplaza con los datos de la API). -->
+    <template id="tpl-notif">
+        <div class="notif__item">
+            <div>
+                <p class="notif__msg" data-campo="mensaje">Tu incidencia #1 fue validada.</p>
+                <span class="notif__meta"><span data-campo="fecha">01/01/2026 10:00</span><span data-campo="estado"></span></span>
+            </div>
+            <div class="notif__acc">
+                <a href="#" data-accion="ver" hidden>Ver</a>
+                <button type="button" data-accion="leer" hidden>Marcar leída</button>
+            </div>
+        </div>
+    </template>
+
+    <script src="js/api.js"></script>
+    <script src="js/componentes/toast.js"></script>
+    <script src="js/pantallas/_comun.js"></script>
+    <script src="js/layout.js"></script>
+    <script src="js/guardia.js"></script>
+    <script src="js/pantallas/notificaciones.js"></script>
+</body>
+</html>

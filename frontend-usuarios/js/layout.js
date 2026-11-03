@@ -138,6 +138,21 @@
         var salir = header.querySelector('[data-accion="logout"]');
         if (salir) salir.addEventListener('click', cerrarSesion);
 
+        // Campana de notificaciones: resaltada en su pantalla y con el globito de «sin leer».
+        var campana = header.querySelector('[data-campana]');
+        if (campana) {
+            if (opts && opts.activo === 'notificaciones') campana.classList.add('campana--activa');
+            Api.get('/notificaciones/contador').then(function (res) {
+                var n = res && res.status === 200 && res.data ? Number(res.data.no_leidas) : 0;
+                var globo = campana.querySelector('[data-campana-n]');
+                if (globo && n > 0) {
+                    globo.textContent = n > 99 ? '99+' : String(n);
+                    globo.hidden = false;
+                    campana.setAttribute('aria-label', 'Notificaciones: ' + n + ' sin leer');
+                }
+            }).catch(function () { /* sin contador: la campana se ve igual */ });
+        }
+
         return header;
     }
 

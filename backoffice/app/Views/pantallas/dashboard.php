@@ -75,7 +75,8 @@ require BASE_PATH . '/app/Views/partials/head.php';
 <div class="bo-panel" style="margin-top:22px">
     <h2 class="bo-panel__tit">Mapa operativo</h2>
     <p class="bo-sub" style="font-size:13px;margin:0 0 12px">
-        Contenedores coloreados por estado e instalaciones (los puntos más grandes).
+        Contenedores coloreados por estado, instalaciones (los puntos más grandes) e incidencias abiertas
+        (el halo alrededor del contenedor: ámbar si falta validarla, rojo si ya está en curso).
         Los filtros de arriba del mapa recortan lo que se ve sin recargar la página.
     </p>
     <?php if ($sinCoords > 0): ?>
@@ -86,6 +87,47 @@ require BASE_PATH . '/app/Views/partials/head.php';
         </div>
     <?php endif; ?>
     <div id="bo-mapa"></div>
+</div>
+
+<!-- Top de contenedores desbordados -->
+<div class="bo-panel" style="margin-top:20px">
+    <h2 class="bo-panel__tit">Contenedores que más se desbordan</h2>
+    <p class="bo-sub" style="font-size:13px;margin:0 0 12px">
+        Cantidad de reportes de desborde por contenedor. Es donde conviene reforzar la frecuencia de recolección o instalar otro contenedor.
+    </p>
+    <nav class="bo-tabs">
+        <?php foreach (Panel::PERIODOS as $slug => $texto): ?>
+            <a class="bo-tab<?= $periodo === $slug ? ' bo-tab--activo' : '' ?>" href="<?= e(ruta('dashboard') . '?periodo=' . $slug) ?>"><?= e($texto) ?></a>
+        <?php endforeach; ?>
+    </nav>
+    <?php if (!$top): ?>
+        <div class="bo-vacio"><p class="bo-vacio__t">Sin desbordes reportados</p><p class="bo-vacio__s">No hay reportes de desborde en este período.</p></div>
+    <?php else: $max = max(array_column($top, 'veces')); ?>
+        <div class="bo-tabla-wrap">
+            <table class="bo-tabla">
+                <thead><tr><th>#</th><th>Contenedor</th><th>Zona</th><th>Estado actual</th><th style="width:34%">Reportes</th><th class="bo-tabla__acc"></th></tr></thead>
+                <tbody>
+                    <?php foreach ($top as $n => $t): ?>
+                        <tr>
+                            <td class="bo-mono"><?= $n + 1 ?></td>
+                            <td><?= e($t['ubicacion']) ?> <span class="bo-dim bo-mono">#<?= (int) $t['id'] ?></span></td>
+                            <td><?= e($t['zona']) ?></td>
+                            <td><span class="bo-badge bo-badge--<?= $t['estado'] === 'funcional' ? 'ok' : ($t['estado'] === 'desbordado' ? 'rol' : 'baja') ?>"><?= e($t['estado']) ?></span></td>
+                            <td>
+                                <div style="display:flex;align-items:center;gap:10px">
+                                    <div style="flex:1;height:8px;border-radius:4px;background:var(--superficie2)">
+                                        <div style="height:8px;border-radius:4px;background:var(--ambar);width:<?= (int) round($t['veces'] * 100 / $max) ?>%"></div>
+                                    </div>
+                                    <b class="bo-mono"><?= (int) $t['veces'] ?></b>
+                                </div>
+                            </td>
+                            <td class="bo-tabla__acc"><a class="bo-btn bo-btn--sm" href="<?= e(ruta('contenedores/editar') . '?id=' . (int) $t['id']) ?>">Ver</a></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
 </div>
 
 <!-- Cola de trabajo -->
@@ -146,7 +188,8 @@ require BASE_PATH . '/app/Views/partials/head.php';
             { etiqueta: 'Todo',           predicado: function () { return true; } },
             { etiqueta: 'Desbordados',    predicado: function (m) { return m.estado === 'desbordado'; } },
             { etiqueta: 'No funcionales', predicado: function (m) { return m.estado === 'no funcional'; } },
-            { etiqueta: 'Instalaciones',  predicado: function (m) { return m.tipo === 'instalacion'; } }
+            { etiqueta: 'Instalaciones',  predicado: function (m) { return m.tipo === 'instalacion'; } },
+            { etiqueta: 'Incidencias abiertas', predicado: function (m) { return m.tipo === 'incidencia'; } }
         ]
     });
 })();

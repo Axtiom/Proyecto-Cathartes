@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once BASE_PATH . '/app/Models/Notificacion.php';
+
 /**
  * Model de Instalaciones del Backoffice (PDO directo a `cathartes`).
  *
@@ -130,13 +132,16 @@ class Instalacion
             self::coord($d['latitud'] ?? ''), self::coord($d['longitud'] ?? ''),
             (int) $d['capacidad'], (int) $d['ocupacion_actual'], $d['tipo'],
         ]);
-        return ['ok' => true, 'id' => (int) $pdo->lastInsertId()];
+        $nueva = (int) $pdo->lastInsertId();
+        Notificacion::revisarUmbral($nueva, 0);   // una instalación que nace por encima del 80 % también alerta
+        return ['ok' => true, 'id' => $nueva];
     }
 
     /** @return array{ok:bool,error?:string} */
     public static function actualizar(int $id, array $d): array
     {
-        if (self::porId($id) === null) return ['ok' => false, 'error' => 'Instalación inexistente.'];
+        $actual = self::porId($id);
+        if ($actual === null) return ['ok' => false, 'error' => 'Instalación inexistente.'];
         $v = self::validar($d);
         if ($v !== null) return ['ok' => false, 'error' => $v];
 
@@ -148,6 +153,7 @@ class Instalacion
             self::coord($d['latitud'] ?? ''), self::coord($d['longitud'] ?? ''),
             (int) $d['capacidad'], (int) $d['ocupacion_actual'], $d['tipo'], $id,
         ]);
+        Notificacion::revisarUmbral($id, (int) $actual['ocupacion_actual']);   // alerta si cruzó el 80 %
         return ['ok' => true];
     }
 

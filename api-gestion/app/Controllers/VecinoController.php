@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once BASE_PATH . '/app/Models/Notificacion.php';
+
 require_once BASE_PATH . '/app/Models/Incidencia.php';
 require_once BASE_PATH . '/app/Models/Contenedor.php';
 
@@ -148,8 +150,16 @@ class VecinoController extends Controller
             }
             Incidencia::guardarFoto($id, $nombre);
 
+            // Aviso a los administradores: hay una incidencia nueva para validar.
+            $cont = Contenedor::completo($idContenedor);
+            Notificacion::paraAdministradores('nueva incidencia',
+                'Nueva incidencia #' . $id . ': ' . $tipo . ' en ' . ($cont['ubicacion'] ?? ('contenedor #' . $idContenedor)) . '.', $id);
+
             $this->json(['ok' => true, 'id' => $id, 'mensaje' => 'Incidencia reportada.'], 201);
         } catch (Throwable $e) {
+            if (isset($id) && is_int($id)) {
+                Incidencia::descartarHuerfana($id);   // sin foto no queda registrada
+            }
             error_log('[' . static::class . '] ' . $e->getMessage());
             $this->json(['ok' => false, 'error' => 'Error interno del servidor'], 500);
         }

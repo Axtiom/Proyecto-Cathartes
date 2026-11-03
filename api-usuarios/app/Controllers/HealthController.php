@@ -12,7 +12,7 @@ class HealthController extends Controller
             echo json_encode(['ok' => true, 'db' => true]);
         } catch (Throwable $e) {
             // El detalle (usuario, host, motivo) va al log del servidor; el endpoint es público
-            // y nunca lo muestra. 503 para que un healthcheck (Docker, balanceador) lo detecte.
+            // y nunca lo muestra. 503 para que un chequeo de monitoreo lo detecte.
             error_log('[health] ' . $e->getMessage());
             http_response_code(503);
             echo json_encode(['ok' => false, 'db' => false], JSON_UNESCAPED_UNICODE);

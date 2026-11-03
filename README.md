@@ -11,7 +11,7 @@ de datos MySQL.
 |---------------------|----------------------------------|--------------------|
 | `api-usuarios/`     | Autenticación, registro, perfil  | JSON               |
 | `api-gestion/`      | Contenedores, estadísticas, incidencias del vecino | JSON |
-| `api-recoleccion/`  | Ruta del día de la cuadrilla     | JSON               |
+| `api-recoleccion/`  | Cuadrilla en territorio (rutas, intervenciones, repuestos, mapa) y operario de instalación | JSON |
 | `backoffice/`       | Panel de administración municipal | HTML server-rendered |
 | `frontend-usuarios/`| Interfaz de vecino, cuadrilla y operario | HTML/JS estático |
 | `landing-page/`     | Página pública informativa       | HTML/JS estático   |
@@ -31,40 +31,77 @@ coincide, una app no puede validar la sesión que abrió otra.
 No hay verificación en dos pasos: el login es de un solo paso (usuario +
 contraseña).
 
-## Correr todo con Docker
+## Instalación en XAMPP
+
+Pensado para **XAMPP** (Apache 2.4 + MySQL/MariaDB + PHP 8). No hace falta instalar nada más.
+
+**1. Copiar el proyecto.** Poné la carpeta completa dentro de `htdocs`, por ejemplo
+`C:\xampp\htdocs\cathartes` (Windows) o `/opt/lampp/htdocs/cathartes` (Linux). Las seis carpetas de las
+aplicaciones y `storage/` tienen que quedar **hermanas**, como vienen: las rutas entre ellas son relativas.
+
+**2. Arrancar Apache y MySQL** desde el panel de XAMPP (o `sudo /opt/lampp/lampp start`).
+
+**3. Crear la base.** En phpMyAdmin (`http://localhost/phpmyadmin`), pestaña *Importar*, en este orden:
+`db/BD.sql` (estructura), `db/seed.sql` (datos de prueba) y `db/crear_usuario_app.sql` (el usuario
+`cathartes_app`, con permisos solo sobre la base `cathartes`: las apps nunca corren como `root`). O por línea de
+comandos:
 
 ```bash
-cp .env.example .env          # completar DB_ROOT_PASSWORD, DB_PASS y APP_TOKEN_SECRET (openssl rand -hex 32)
-docker compose up -d --build
+/opt/lampp/bin/mysql -u root < db/BD.sql
+/opt/lampp/bin/mysql -u root < db/seed.sql
+/opt/lampp/bin/mysql -u root < db/crear_usuario_app.sql
 ```
 
-Queda en `http://localhost:8080/landing-page/` (también `/frontend-usuarios/login.html`).
-La base se crea y se carga sola la primera vez con `db/BD.sql` y `db/seed.sql`; no se publica
-fuera de la red de Docker. Cuentas de prueba (clave `Cathartes2026`): `admin@cathartes.uy`,
-`admin2@cathartes.uy` (administrador común), `operario@cathartes.uy`, `cuadrilla@cathartes.uy`
-y `vecino@correo.com`. **Cambiarlas antes de exponer el sistema.**
+**4. Los `.env` ya vienen creados** en las 4 apps PHP (`api-usuarios`, `api-gestion`, `api-recoleccion` y
+`backoffice`), con la clave del usuario `cathartes_app` y un `APP_TOKEN_SECRET` aleatorio que es **el mismo en las
+4** (así la sesión iniciada en una vale en las demás). No hay que tocar nada. Si cambiás la clave de la base,
+cambiala en `db/crear_usuario_app.sql` y en los 4 `.env` (`DB_PASS`).
 
-Tests: `docker compose --profile tests run --rm tests` (ver `tests/README.md`).
+> **Cuidado con los `.env`:** tienen claves. El `.gitignore` los excluye, así que `git push` no los sube; no los
+> subas a ningún lado ni los compartas. Antes de publicar el sistema, generá una clave y un secreto nuevos
+> (`openssl rand -hex 32`), y poné `COOKIE_SECURE=true` si usás HTTPS. Si perdés los `.env`, se recrean
+> copiando `.env.example` y completando esos tres valores.
 
-## Deploy (sin Docker)
+**5. Verificar Apache.** Las protecciones del proyecto son archivos `.htaccess`, y necesitan `mod_rewrite` y
+`AllowOverride All` en `htdocs` (XAMPP los trae así por defecto). Si en tu instalación no es así, en
+`conf/httpd.conf` dejá:
 
-1. En cada una de las 4 apps PHP (`api-usuarios`, `api-gestion`,
-   `api-recoleccion`, `backoffice`), copiá `.env.example` a `.env` y
-   completá `DB_USER`, `DB_PASS` y `APP_TOKEN_SECRET` (el mismo valor en las
-   4).
-2. Apuntá el document root de cada app a su propia carpeta `public/`.
-3. Las 6 carpetas (`api-usuarios`, `api-gestion`, `api-recoleccion`,
-   `backoffice`, `frontend-usuarios`, `landing-page`) tienen que quedar como
-   hermanas en el servidor (mismo nivel), para que las rutas relativas entre
-   ellas funcionen. Lo mismo la carpeta `storage/`.
-4. Importá `db/BD.sql` (estructura) y `db/seed.sql` (datos de prueba) en ese
-   orden. Si solo necesitás el esquema vacío, está en `db/dump_estructura.sql`.
-5. Creá un usuario de MySQL propio para la app (no uses `root`) con permisos
-   solo sobre la base `cathartes`, y ponelo en el `.env`.
+```apache
+<Directory "C:/xampp/htdocs">
+    AllowOverride All
+</Directory>
+```
+
+**6. Fotos de incidencias.** La carpeta `storage/uploads/incidencias` tiene que poder escribirla Apache. En
+Linux: `sudo chown -R daemon:daemon storage` (el usuario de Apache en XAMPP). En Windows no hace falta.
+
+**7. Probar.**
+
+| Qué | URL |
+|---|---|
+| Página pública | `http://localhost/cathartes/landing-page/` |
+| Vecino, cuadrilla y operario | `http://localhost/cathartes/frontend-usuarios/login.html` |
+| Administrador (backoffice) | se entra desde el mismo login, o `http://localhost/cathartes/backoffice/` |
+| Estado de las APIs | `http://localhost/cathartes/api-gestion/public/health` → `{"ok":true,"db":true}` |
+
+Cuentas de prueba (clave `Cathartes2026`): `admin@cathartes.uy`, `admin2@cathartes.uy` (administrador común),
+`operario@cathartes.uy`, `cuadrilla@cathartes.uy` y `vecino@correo.com`. **Cambiarlas antes de exponer el sistema.**
+
+### Qué queda protegido
+Como todo el proyecto cuelga de `htdocs`, se cierran con `.htaccess` (`Require all denied`) las carpetas
+internas: `app/`, `config/` y `routes/` de cada app, `db/`, `tests/`, `docs/`, `storage/` y `.github/`. El
+`.htaccess` de la raíz bloquea los archivos `.env`, `.sql`, `.md` y `.sh`, desactiva el listado de carpetas y
+redirige `/backoffice/<pantalla>` a `/backoffice/public/<pantalla>` (así funciona el destino del login del administrador, con cualquier nombre de carpeta). Se puede comprobar: abrir
+`http://localhost/cathartes/api-usuarios/.env` o `.../db/BD.sql` tiene que dar **403**.
+
+### Si cada app tiene su propio dominio o carpeta pública
+También se puede apuntar el document root de cada app a su `public/` (como en un servidor de producción). En ese
+caso las apps siguen las URLs hermanas por sí mismas y los `.htaccess` de arriba no hacen falta.
 
 ## Documentación
 
-- `docs/API.md` — endpoints de `api-usuarios` y `api-gestion`, con ejemplos.
+- `docs/API.md` — endpoints de las tres APIs, con ejemplos, el ciclo de una incidencia y quién recibe cada aviso.
+- `docs/contrato-api-recoleccion.md` — respuestas exactas de la API de recolección (lo que leen las pantallas).
 - `tests/README.md` — cómo correr los tests y qué cubren.
 - `docs/modelo_fisico.md` — modelo físico de la base (diagrama + tablas).
 - `docs/GITHUB.md` — organización, ramas, Pull Requests y convención de commits.

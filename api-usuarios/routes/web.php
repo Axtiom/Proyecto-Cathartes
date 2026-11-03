@@ -31,3 +31,9 @@ $router->put('/usuarios', 'UsuarioController', 'actualizar');        // ?id=N
 $router->delete('/usuarios', 'UsuarioController', 'baja');           // ?id=N (baja lógica)
 $router->post('/usuarios/aprobar', 'UsuarioController', 'aprobar');  // ?id=N
 $router->post('/usuarios/rechazar', 'UsuarioController', 'rechazar');// ?id=N
+
+// Notificaciones de la persona con sesión (cualquier rol; solo las propias)
+$router->get('/notificaciones', 'NotificacionController', 'listar');                // ?no_leidas=1 &limite=N
+$router->get('/notificaciones/contador', 'NotificacionController', 'contador');
+$router->post('/notificaciones/leer', 'NotificacionController', 'leer');            // ?id=N
+$router->post('/notificaciones/leer-todas', 'NotificacionController', 'leerTodas');

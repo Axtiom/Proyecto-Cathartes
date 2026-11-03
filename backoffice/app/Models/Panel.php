@@ -111,7 +111,51 @@ class Panel
             ];
         }
 
+        // Incidencias ABIERTAS, en el punto de su contenedor. Ámbar = todavía sin validar; rojo = validada y en curso.
+        $st = $pdo->query(
+            "SELECT h.ID_incidencia, h.tipo, h.validada, c.ubicacion, c.latitud, c.longitud
+             FROM incidencia_historial h JOIN contenedor c ON c.ID = h.ID_contenedor
+             WHERE h.estado = 'en curso' AND c.latitud IS NOT NULL AND c.longitud IS NOT NULL"
+        );
+        foreach ($st as $i) {
+            $puntos[] = [
+                'id' => (int) $i['ID_incidencia'], 'tipo' => 'incidencia',
+                'estado' => $i['validada'] === 'si' ? 'en curso' : 'sin validar',
+                'latitud' => (float) $i['latitud'], 'longitud' => (float) $i['longitud'],
+                'titulo' => $i['tipo'] . ' · ' . $i['ubicacion'],
+                'ubicacion' => $i['validada'] === 'si' ? 'validada, en curso' : 'pendiente de validar',
+            ];
+        }
+
         return $puntos;
+    }
+
+    public const PERIODOS = ['mes' => 'Este mes', '30d' => 'Últimos 30 días'];
+
+    /**
+     * Ranking de contenedores con más reportes de DESBORDE en el período: el dato que dice
+     * dónde conviene reforzar la frecuencia o poner otro contenedor.
+     * 'mes' = desde el día 1 del mes en curso; '30d' = los últimos 30 días corridos.
+     *
+     * @return list<array{id:int,ubicacion:string,zona:string,estado:string,veces:int,ultima:string}>
+     */
+    public static function topDesbordados(string $periodo = 'mes', int $limite = 5): array
+    {
+        $desde = $periodo === '30d' ? 'DATE_SUB(NOW(), INTERVAL 30 DAY)' : "DATE_FORMAT(NOW(), '%Y-%m-01')";
+        $st = Database::conexion()->query(
+            "SELECT c.ID, c.ubicacion, r.zona, c.estado, COUNT(*) AS veces, MAX(h.fecha_ing) AS ultima
+             FROM incidencia_historial h
+             JOIN contenedor c ON c.ID = h.ID_contenedor
+             JOIN ruta r ON r.ID = c.ID_ruta
+             WHERE h.tipo = 'desbordado' AND h.fecha_ing >= {$desde}
+             GROUP BY c.ID, c.ubicacion, r.zona, c.estado
+             ORDER BY veces DESC, ultima DESC, c.ID
+             LIMIT " . max(1, min(20, $limite))
+        );
+        return array_map(fn ($f) => [
+            'id' => (int) $f['ID'], 'ubicacion' => (string) $f['ubicacion'], 'zona' => (string) $f['zona'],
+            'estado' => (string) $f['estado'], 'veces' => (int) $f['veces'], 'ultima' => (string) $f['ultima'],
+        ], $st->fetchAll());
     }
 
     /** Cuántos puntos NO se pueden dibujar por no tener coordenadas cargadas. */

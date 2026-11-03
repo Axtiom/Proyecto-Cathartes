@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 /**
- * Levanta api-usuarios, api-gestion y backoffice con el servidor embebido de PHP (php -S), apuntando a la
- * base de PRUEBA, y deja sus URLs en las constantes URL_USUARIOS / URL_GESTION / URL_BACKOFFICE.
+ * Levanta api-usuarios, api-gestion, api-recoleccion y backoffice con el servidor embebido de PHP (php -S), apuntando a la
+ * base de PRUEBA, y deja sus URLs en las constantes URL_USUARIOS / URL_GESTION / URL_RECOLECCION / URL_BACKOFFICE.
  * Los servidores se apagan solos al terminar la corrida.
  */
 require __DIR__ . '/bootstrap_comun.php';
@@ -17,7 +17,7 @@ $puertoLibre = function (): int {
 };
 
 $procesos = [];
-foreach (['USUARIOS' => 'api-usuarios', 'GESTION' => 'api-gestion', 'BACKOFFICE' => 'backoffice'] as $clave => $app) {
+foreach (['USUARIOS' => 'api-usuarios', 'GESTION' => 'api-gestion', 'RECOLECCION' => 'api-recoleccion', 'BACKOFFICE' => 'backoffice'] as $clave => $app) {
     $puerto = $puertoLibre();
     $raiz   = dirname(__DIR__) . '/' . $app . '/public';
     $proc   = proc_open(
@@ -39,7 +39,7 @@ register_shutdown_function(function () use ($procesos) {
 });
 
 // Esperar a que respondan (cualquier respuesta HTTP sirve).
-foreach ([URL_USUARIOS, URL_GESTION, URL_BACKOFFICE] as $url) {
+foreach ([URL_USUARIOS, URL_GESTION, URL_RECOLECCION, URL_BACKOFFICE] as $url) {
     $listo = false;
     for ($i = 0; $i < 50 && !$listo; $i++) {
         $ch = curl_init($url . '/health');

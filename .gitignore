@@ -37,7 +37,7 @@ desktop.ini
 almacen/subidas/
 
 # Log del stub de correo: guarda los mails que el sistema "manda" cuando
-# MAIL_DRIVER=stub, y ahi adentro van los CODIGOS DE 2FA Y DE RECUPERACION EN
+# MAIL_DRIVER=stub, y ahi adentro van los ENLACES DE RECUPERACION DE CONTRASEÑA EN
 # CLARO. No se commitea nunca.
 almacen/mail.log
 

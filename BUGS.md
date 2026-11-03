@@ -37,6 +37,8 @@
 | BUG-019 | 2026-10-14 | APIs / seguridad | `/health` (público) mostraba el error de MySQL con usuario y host | media     | RESUELTO |
 | BUG-020 | 2026-10-14 | BD / auditoría | Dos acciones sobre la misma cuenta en el mismo segundo daban 500 (PK de `gestiona`/`autorizacion`) | media     | RESUELTO |
 | BUG-021 | 2026-10-14 | BD / seed | Acentos rotos al cargar el seed y datos de prueba sin sentido | baja      | RESUELTO |
+| BUG-022 | 2026-10-26 | API Gestión / incidencias | Si fallaba el guardado de la foto, la incidencia quedaba registrada sin foto | alta      | RESUELTO |
+| BUG-023 | 2026-10-26 | Backoffice / incidencias | Se podía asignar una cuadrilla a una incidencia sin validar o ya finalizada | media     | RESUELTO |
 
 ---
 
@@ -104,7 +106,7 @@ ignorados.
 - **Área:** Frontend de Usuarios / CSS (`public/assets/css/estilos.css`, `.fila-2`)
 - **Severidad:** baja
 - **Estado:** RESUELTO
-- **Detectado en:** revisión visual de la pantalla de registro (captura de Juan).
+- **Detectado en:** revisión visual de la pantalla de registro (captura del equipo).
 
 **Síntoma.** En las filas de dos campos (Nombre/Apellido y Contraseña/Confirmar
 contraseña) la columna derecha quedaba un poco más ancha que la izquierda, en
@@ -159,7 +161,7 @@ violaría el MER y se rompería al reimportar bien.
 **Impacto.** `registro`, `login`, `verificar`, `restablecer` fallan con 500. Nada
 de auth funciona hasta arreglar la BD.
 
-**Solución aplicada — erradicar la ñ del identificador (decisión de Juan).**
+**Solución aplicada — erradicar la ñ del identificador (decisión del equipo).**
 En vez de solo re-importar (que dejaría la ñ como riesgo latente en cada import
 futuro), se renombró la columna a **`contrasena`** (ASCII, misma palabra sin
 tilde). Un identificador ASCII no se puede corromper por codificación. Se tocó:
@@ -176,7 +178,7 @@ tilde). Un identificador ASCII no se puede corromper por codificación. Se tocó
   derivada: **ningún identificador (tabla/columna) lleva ñ ni acentos; los dumps
   se importan/exportan siempre en UTF-8**.
 
-**Verificación.** E2E por la API (registro → login 403 → aprobar → 2FA → `/yo` →
+**Verificación.** E2E por la API (registro → login 403 → aprobar → login → `/yo` →
 kill-switch → recuperar → restablecer → login con clave nueva): 10/10 OK.
 `HEX(COLUMN_NAME)` de la nueva columna = `636F6E74726173656E61` (ASCII puro).
 
@@ -188,12 +190,12 @@ kill-switch → recuperar → restablecer → login con clave nueva): 10/10 OK.
 - **Área:** Frontend de Usuarios / CSS (conversión PHP→HTML de la reestructuración)
 - **Severidad:** media (rompe el visual de todas las pantallas de acceso)
 - **Estado:** RESUELTO
-- **Detectado en:** revisión visual de `login.html` (captura de Juan) tras pasar
+- **Detectado en:** revisión visual de `login.html` (captura del equipo) tras pasar
   los frontends a HTML/CSS/JS.
 
 **Síntoma.** Arriba de "Correo electrónico" aparecía una caja vacía (parecía un
 input sin etiqueta) y otra con borde rojo, ícono y sin texto. Eran las cajas de
-flash (`.aviso--dev`) y de error (`.aviso--error`), que en PHP estaban dentro de
+flash (`.aviso--info`) y de error (`.aviso--error`), que en PHP estaban dentro de
 un `<?php if (...) ?>` y ahora traían el atributo `hidden` — pero se mostraban
 igual, vacías.
 
@@ -264,7 +266,7 @@ cuando se implementen. Arreglado una vez, se replica.
 
 **Verificación.** `GET .../public/health` por Apache → `{"ok":true,"db":true}`
 (HTTP 200); y servido en raíz con `php -S :8083` sigue dando 200. Cadena e2e
-completa (registro → 403 → aprobar → login → 2FA → `/yo` → kill-switch) OK.
+completa (registro → 403 → aprobar → login → `/yo` → kill-switch) OK.
 
 ---
 
@@ -306,7 +308,7 @@ la carpeta tomada.)
 
 **Verificación.** Junction confirmado (`LinkType: Junction`, `Target: D:\cathartes`);
 Apache sirve el código nuevo (landing con `data-stat`, login con `data-page`,
-Router con `normalizarPath`); cadena e2e login→2FA→`/yo` OK.
+Router con `normalizarPath`); cadena e2e login→`/yo` OK.
 
 **Nota para producción.** En Rocky Linux el equivalente es un symlink
 (`ln -s /ruta/al/repo /var/www/...`) o servir el repo directo como docroot del
@@ -334,7 +336,7 @@ listaba 15 de las 22 tablas reales (faltaban `toma`, `autorizacion`, `gestiona`,
 `maquinaria`, `repuestos`, `usa`, `verificacion`).
 
 **Solución.** Se aplicó la Regla cero ("el DDL gana"): no se tocó `toma`. Decisión
-de Juan (2026-07-24): dejarla como está y solo sembrarla (incluyendo `fecha=NOW()`).
+del equipo (2026-07-24): dejarla como está y solo sembrarla (incluyendo `fecha=NOW()`).
 Se quitó el `CREATE TABLE toma` de `db/migracion-2026-07-24.sql` y se ajustó el
 `INSERT` de seed para incluir `fecha`. El resto de la migración (ruta.zona/estado,
 camion.fecha_baja/motivo_baja, cuadrilla.estado, rename de la cuadrilla, 2ª ruta)
@@ -342,7 +344,7 @@ se ejecutó sin problemas.
 
 **Verificación.** `SHOW CREATE TABLE toma` confirma que quedó intacta; la fila de
 seed `(3, 1, NOW())` entró bien. `db/BD.sql` ya tenía las 22 tablas: no hubo drift
-de tablas, solo del *contenido* de la doc conceptual, que Juan actualizará el lunes.
+de tablas, solo del *contenido* de la doc conceptual, que el equipo actualizará el lunes.
 
 **Insumo para la doc.** Al reconciliar MER/pasaje/diccionario: `toma` es una
 relación **con atributo temporal** (`fecha` en la PK), no una simple asociación
@@ -388,7 +390,7 @@ consciente por tiempo, Fase 4.1).
 la contraseña inicial del usuario que crea. Es decir, un tercero conoce la credencial
 de una cuenta ajena. Vale para los cuatro roles.
 
-**Por qué queda así por ahora.** Se decidió (Juan, Fase 4.1) dejarlo simple por tiempo:
+**Por qué queda así por ahora.** Se decidió (el equipo, Fase 4.1) dejarlo simple por tiempo:
 el alta funciona y el usuario puede usar la clave que le pasan.
 
 **Lo correcto (a implementar).** Que el sistema **genere una contraseña temporal**
@@ -405,7 +407,7 @@ tabla nueva para el flag → coordinar con el MER antes de tocar el esquema.
 - **Área:** Backoffice / Pantalla 3 (alta multirol, Fase 4.1) — CSS + Model
 - **Severidad:** alta (permitía cruzar datos entre subtipos desde la UI)
 - **Estado:** RESUELTO
-- **Detectado en:** prueba manual de Juan sobre el panel de alta.
+- **Detectado en:** prueba manual del equipo sobre el panel de alta.
 
 **Síntoma.** Dos cosas en el mismo panel:
 
@@ -485,7 +487,7 @@ de prueba se borraron después (base de vuelta en 5 usuarios; `autorizacion` y
 - **Área:** Backoffice / `app/Views/partials/sidebar.php` (marca)
 - **Severidad:** baja (visual, pero es la marca del sistema)
 - **Estado:** RESUELTO
-- **Detectado en:** revisión visual de Juan sobre el backoffice.
+- **Detectado en:** revisión visual del equipo sobre el backoffice.
 
 **Síntoma.** El isotipo Cathartes del sidebar aparecía con **una sola ala**, la
 derecha. Además le faltaban las cuatro circunferencias inferiores (las ruedas del
@@ -584,11 +586,11 @@ vista HTML.
 ### BUG-013 — Un número demasiado grande desbordaba la columna y daba 500
 
 - **Fecha:** 2026-07-26
-- **Área:** Backoffice / validación de los Models (Recompensa, Camión, Instalación, Contenedor)
+- **Área:** Backoffice / validación de los Models (Camión, Instalación, Contenedor)
 - **Severidad:** media (no corrompe datos, pero corta la operación con un 500)
 - **Estado:** RESUELTO
-- **Detectado en:** prueba manual de Juan, cargando un costo en puntos absurdamente
-  grande en el alta de una recompensa.
+- **Detectado en:** prueba manual del equipo, cargando una capacidad absurdamente
+  grande en el alta de un camión.
 
 **Síntoma.** Con un número muy grande en un campo numérico, el alta devolvía **500**
 en vez de un mensaje de validación. (Gracias a [BUG-012](#bug-012--un-error-de-pdo-imprimía-el-stack-trace-completo-en-el-navegador)
@@ -605,10 +607,10 @@ El mismo agujero estaba en las coordenadas: `latitud`/`longitud` son
 desbordaba igual, y de paso era geográficamente imposible (la latitud va de -90 a
 90) sin que nada lo dijera.
 
-**Impacto.** Cuatro pantallas: costo en puntos (Recompensas), capacidad (Camiones),
-capacidad y ocupación (Instalaciones), coordenadas (Contenedores e Instalaciones).
+**Impacto.** Tres pantallas: capacidad (Camiones), capacidad y ocupación (Instalaciones),
+coordenadas (Contenedores e Instalaciones).
 
-**Solución aplicada.** Dos helpers en `app/Core/helpers.php`, usados por los cuatro
+**Solución aplicada.** Dos helpers en `app/Core/helpers.php`, usados por los tres
 Models:
 
 ```php
@@ -651,23 +653,22 @@ escrituras, pero `api-usuarios` sí).
 - **Área:** Frontend de Usuarios / chrome compartido (`partials/layout.html`, `js/layout.js`, `js/guardia.js`)
 - **Severidad:** alta (le ofrecía a cada rol links que no le corresponden)
 - **Estado:** RESUELTO
-- **Detectado en:** prueba manual de Juan, navegando como cuadrilla y como operario.
+- **Detectado en:** prueba manual del equipo, navegando como cuadrilla y como operario.
 
-**Síntoma.** El nav mostraba **Reportar / Mis incidencias / Recompensas** a roles que no
+**Síntoma.** El nav mostraba **Reportar / Mis incidencias** a roles que no
 son vecino. Los links funcionaban en el sentido de que la API respondía **403**
 correctamente — el límite duro estaba bien — pero nunca deberían haber estado ahí. Lo
 mismo en la columna «Sistema» del footer.
 
 **Causa.** El chrome tenía **un solo** `<template id="tpl-header">`, escrito con el nav
 del vecino, y las 8 pantallas lo clonaban tal cual. No había noción de rol en el
-layout: `layout.js` rellenaba nombre, iniciales y saldo, y nada más.
+layout: `layout.js` rellenaba nombre e iniciales, y nada más.
 
 Un agravante que hace que el bug pueda volver de forma **silenciosa**: el partial se
 baja por `fetch('partials/layout.html')`, o sea que el navegador lo cachea. Con un
 partial viejo en caché, un `layout.js` nuevo que busque bloques por rol no encuentra
 ninguno y **no oculta nada** — el resultado es exactamente este síntoma, sin ningún
-error en consola. Es el mismo patrón de caché rancia que ya nos había costado un rato
-con el 2FA.
+error en consola.
 
 **Solución aplicada.** Tres cosas:
 
@@ -677,7 +678,7 @@ con el 2FA.
    `GET /yo`. Para que tres headers no signifiquen triplicar marcado, las dos piezas
    idénticas salen a su propio template y se insertan en un slot: `tpl-logo` (el SVG,
    que ya se rompió una vez al transcribirlo a mano — ver [BUG-011](#bug-011--el-logo-del-sidebar-perdió-el-ala-izquierda-y-las-ruedas))
-   y `tpl-avatar` (badge de puntos + menú).
+   y `tpl-avatar` (menú de usuario).
 2. **Footer**: sigue siendo uno solo (no se duplica), pero la columna «Sistema» tiene
    un bloque por rol marcado con `data-rol`, y se muestra el que corresponde.
    «Mi perfil» del menú de usuario también quedó acotado a vecino: `perfil.html` es
@@ -702,7 +703,7 @@ erradicar.
 
 | Rol | Nav | Marca | Footer «Sistema» |
 |---|---|---|---|
-| Vecino | Inicio · Reportar · Mis incidencias · Mapa · Recompensas | `inicio.html` | las 4 del vecino |
+| Vecino | Inicio · Reportar · Mis incidencias · Mapa | `inicio.html` | las 4 del vecino |
 | Cuadrilla | Inicio · Mis rutas · Intervenciones · Mapa | `cuadrilla.html` | las 4 de cuadrilla |
 | Operario | Inicio · Mi instalación · Informes | `operario.html` | las 3 de operario |
 
@@ -737,7 +738,7 @@ pendiente de hacerse a mano.
 - **Área:** Frontend de Usuarios / cliente HTTP (`js/api.js`) y bootstrap (`js/guardia.js`, `js/layout.js`)
 - **Severidad:** media (la pantalla se lee como rota)
 - **Estado:** RESUELTO
-- **Detectado en:** prueba manual de Juan sobre las pantallas nuevas de la Fase 3.
+- **Detectado en:** prueba manual del equipo sobre las pantallas nuevas de la Fase 3.
 
 **Síntoma.** Cuando la API no respondía, los estados de carga quedaban colgados
 indefinidamente. Una pantalla congelada en «Cargando…» se lee como rota; una que dice
@@ -789,7 +790,7 @@ error es el que se ejercita de verdad al abrir las pantallas.
 - **Área:** Frontend de Usuarios / chrome (`js/layout.js`, `partials/layout.html`)
 - **Severidad:** alta (deja al usuario encerrado en la sesión)
 - **Estado:** RESUELTO
-- **Detectado en:** prueba de Juan inmediatamente después del arreglo de [BUG-014](#bug-014--cuadrilla-y-operario-veían-el-header-y-el-footer-del-vecino).
+- **Detectado en:** prueba del equipo inmediatamente después del arreglo de [BUG-014](#bug-014--cuadrilla-y-operario-veían-el-header-y-el-footer-del-vecino).
 
 **Síntoma.** No aparecía **ningún** header, y sin header no hay menú de usuario: no se
 podía cerrar sesión de la forma normal.
@@ -855,7 +856,7 @@ lo que no se puede resolver con seguridad.
 
 ### BUG-019 — `/health` público mostraba el error de MySQL
 - **Síntoma:** con la base caída, `GET /health` (sin sesión) devolvía el texto del error, con el usuario y el host de la conexión.
-- **Arreglo:** el detalle se loguea; la respuesta es `{"ok": false, "db": false}` con HTTP 503, que además permite que un healthcheck de Docker lo detecte (antes devolvía 200 aunque la base estuviera caída).
+- **Arreglo:** el detalle se loguea; la respuesta es `{"ok": false, "db": false}` con HTTP 503, que además permite que un chequeo de monitoreo lo detecte (antes devolvía 200 aunque la base estuviera caída).
 
 ### BUG-020 — Choque de clave primaria en la auditoría
 - **Síntoma:** crear y dar de baja a un administrador en el mismo segundo producía un error 500 (`Duplicate entry ... for key 'PRIMARY'`).
@@ -863,5 +864,13 @@ lo que no se puede resolver con seguridad.
 - **Arreglo:** el alta del registro de auditoría reintenta corriendo la fecha un segundo. No se cambió el esquema. Cubierto por un test.
 
 ### BUG-021 — Acentos rotos y datos de prueba sin sentido
-- **Síntoma:** al importar `seed.sql` con un cliente en latin1, `Pérez` quedaba como `PÃ©rez`. Además había un vertedero llamado «don ramon / me lo acaco de inventar», una ruta «helo» y un camión de 100 kg.
+- **Síntoma:** al importar `seed.sql` con un cliente en latin1, `Pérez` quedaba como `PÃ©rez`. Además había un vertedero llamado «don ramon / me lo acaco de inventar», una ruta «helo», un camión de 100 kg y descripciones de incidencias como «xd» y una palabrota.
 - **Arreglo:** `SET NAMES utf8mb4` al inicio de `BD.sql` y `seed.sql`; datos de prueba reemplazados por otros coherentes y ampliados.
+
+### BUG-022 — Incidencia sin foto
+- **Síntoma:** el vecino reportaba una incidencia; si fallaba el guardado del archivo en disco (carpeta sin permisos, disco lleno), la API devolvía error pero la fila de `incidencia_historial` ya estaba creada, **sin foto**. La foto es obligatoria (RF-16) y la validación del administrador depende de ella.
+- **Arreglo:** si falla el guardado, se borra la incidencia recién creada (y sus avisos), siempre que todavía no tenga intervención. Cubierto por `tests/Unit/Gestion/IncidenciaTest.php`.
+
+### BUG-023 — Asignar una incidencia sin validar
+- **Síntoma:** el formulario mostraba «Asignar» también para incidencias sin validar, y el backend no lo impedía: un POST directo creaba la intervención. Movilizar una cuadrilla es la acción costosa que la validación previa existe para proteger.
+- **Arreglo:** `Incidencia::asignar` exige que la incidencia exista, esté **validada**, siga en curso y no tenga ya cuadrilla. La pantalla muestra el motivo en vez del formulario. Cubierto por `IncidenciasFlujoTest`.

@@ -47,7 +47,7 @@ class Env
 
     public static function get(string $clave, mixed $default = null): mixed
     {
-        // Prioridad: variable de entorno del proceso (Docker, tests, servidor) y
+        // Prioridad: variable de entorno del proceso (tests, servidor) y
         // después el archivo .env. Así el mismo código corre sin .env en un contenedor.
         $entorno = getenv($clave);
         if ($entorno !== false && $entorno !== '') {

@@ -73,7 +73,7 @@
                     // aplica el guard de rol.
                     if (!opts.rol) {
                         if (window.console) console.warn('[guardia] la pantalla no declara opts.rol: no se aplica guardia de rol');
-                    } else if (ctx.usuario.rol !== opts.rol) {
+                    } else if ([].concat(opts.rol).indexOf(ctx.usuario.rol) === -1) {   // opts.rol: un rol o una lista de roles
                         window.location.href = '403.html';
                         return;
                     }

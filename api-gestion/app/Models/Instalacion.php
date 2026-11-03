@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once BASE_PATH . '/app/Models/Notificacion.php';
+
 /**
  * Model de Instalaciones (vertederos y centros de acopio) de la API de Gestión.
  *
@@ -63,7 +65,9 @@ class Instalacion
             self::coord($d['latitud'] ?? ''), self::coord($d['longitud'] ?? ''),
             (int) $d['capacidad'], (int) ($d['ocupacion_actual'] ?? 0), $d['tipo'],
         ]);
-        return ['ok' => true, 'id' => (int) $pdo->lastInsertId()];
+        $nueva = (int) $pdo->lastInsertId();
+        Notificacion::revisarUmbral($nueva, 0);   // una instalación que nace por encima del 80 % también alerta
+        return ['ok' => true, 'id' => $nueva];
     }
 
     /** PUT parcial: lo que no viene se conserva. */
@@ -86,6 +90,7 @@ class Instalacion
             self::coord($d['latitud'] ?? ''), self::coord($d['longitud'] ?? ''),
             (int) $d['capacidad'], (int) $d['ocupacion_actual'], $d['tipo'], $id,
         ]);
+        Notificacion::revisarUmbral($id, (int) $i['ocupacion_actual']);   // alerta si cruzó el 80 %
         return ['ok' => true];
     }
 

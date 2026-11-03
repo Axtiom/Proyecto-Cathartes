@@ -11,7 +11,7 @@ USUARIO="${DB_USER:-cathartes_test}"
 CLAVE="${DB_PASS:-cathartes_test_pass}"
 
 # Desde qué hosts puede conectarse el usuario de PRUEBA (solo a la base *_test).
-# En Docker se usa '%' porque los tests corren en otro contenedor.
+# Para correr los tests desde otra máquina, pasar TEST_USER_HOSTS="%".
 HOSTS="${TEST_USER_HOSTS:-127.0.0.1 localhost}"
 
 SQL="CREATE DATABASE IF NOT EXISTS \`${DB_TEST}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"

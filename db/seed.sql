@@ -77,6 +77,15 @@ INSERT INTO maquinaria (ID, modelo, tipo, estado, ID_instalacion) VALUES
 (3, 'Bomag BC 772',    'compactadora', 'funcional',        2),
 (4, 'Hyundai HX220',   'excavadora',   'no funcional',     1);
 
+-- 2c) Repuestos (inventario que usan las cuadrillas en las intervenciones).
+--     El 5 tiene stock 0 a propósito: no aparece para elegir y prueba el «no alcanza».
+INSERT INTO repuestos (ID, nombre, tipo, cantidad) VALUES
+(1, 'Tapa de contenedor 1100 L', 'tapa',      12),
+(2, 'Rueda con freno',           'rueda',      8),
+(3, 'Bisagra reforzada',         'herrajes',  30),
+(4, 'Pedal de apertura',         'mecanismo',  5),
+(5, 'Candado de seguridad',      'herrajes',   0);
+
 -- 3) Usuarios (misma contraseña Cathartes2026; los ID 6 y 7 son solicitudes pendientes de aprobación)
 -- ---------------------------------------------------------------------
 INSERT INTO usuario (ID, nombre, email, `contrasena`, estado) VALUES
@@ -161,9 +170,9 @@ INSERT INTO incidencia_historial (ID_incidencia, fecha_ing, descripcion, foto, t
 (2, DATE_SUB(NOW(), INTERVAL 18993 MINUTE), 'Tapa rota, no cierra.',                  NULL,    'roto',                 'si', 'en curso',   4, 3),  -- ~13,2 d
 (3, DATE_SUB(NOW(), INTERVAL 11793 MINUTE), 'Hace días que no pasa la recolección.',  NULL,    'falta de recoleccion', 'si', 'en curso',   4, 1),  -- ~8,2 d
 (4, DATE_SUB(NOW(), INTERVAL  7473 MINUTE), 'Volvió a desbordarse.',                  NULL,    'desbordado',           'si', 'en curso',   4, 2),  -- ~5,2 d
-(6, DATE_SUB(NOW(), INTERVAL  4304 MINUTE), 'xd',                                     '6.png', 'desbordado',           'si', 'en curso',   4, 1),  -- ~3,0 d
-(7, DATE_SUB(NOW(), INTERVAL  4284 MINUTE), 'xd2',                                    '7.png', 'roto',                 'si', 'en curso',   4, 2),  -- ~3,0 d
-(8, DATE_SUB(NOW(), INTERVAL  3008 MINUTE), 'puto',                                   '8.png', 'roto',                 'si', 'en curso',   4, 2);  -- ~2,1 d
+(6, DATE_SUB(NOW(), INTERVAL  4304 MINUTE), 'Contenedor lleno, bolsas apiladas alrededor.', NULL,    'desbordado',           'no', 'en curso',   4, 1),  -- ~3,0 d, SIN validar (queda para validar)
+(7, DATE_SUB(NOW(), INTERVAL  4284 MINUTE), 'La tapa está rota y no se cierra.',            NULL,    'roto',                 'si', 'en curso',   4, 2),  -- ~3,0 d
+(8, DATE_SUB(NOW(), INTERVAL  3008 MINUTE), 'Falta una rueda y el contenedor se inclina.',  NULL,    'roto',                 'si', 'en curso',   4, 2);  -- ~2,1 d
 
 -- ---------------------------------------------------------------------
 -- 9) Intervenciones de la cuadrilla 3
@@ -179,16 +188,33 @@ INSERT INTO intervencion (ID_intervencion, fecha_inicio, fecha_fin, tarea_finali
 (4, DATE_SUB(NOW(), INTERVAL   287 MINUTE), NULL,                                   'no', 7, 3);  -- ~4,8 h, abierta
 
 -- ---------------------------------------------------------------------
--- 10) Notificaciones para el vecino 4
---     Las fechas coinciden a propósito con los hechos que las originan:
---     la de "validada" con el ingreso de la incidencia 3, y la de
---     "finalizada" con el cierre de la intervención 1.
+-- 9b) Repuestos usados y verificaciones de la cuadrilla 3
+--     - En la intervención ya cerrada (1) se cambió una tapa.
+--     - Contenedor 3 recorrido HOY (NOW()); el 6, ayer: es historial, no cuenta como «hoy».
+-- ---------------------------------------------------------------------
+INSERT INTO usa (ID_intervencion, ID_repuesto, cuantos) VALUES
+(1, 1, 1);
+
+INSERT INTO verificacion (ID_usuario, ID_contenedor, fecha) VALUES
+(3, 3, NOW()),
+(3, 6, DATE_SUB(NOW(), INTERVAL 1 DAY));
+
+-- ---------------------------------------------------------------------
+-- 10) Notificaciones
+--     Vecino 4 (validada / finalizada / asignada), administrador 1 (alertas) y
+--     cuadrilla 3 (intervenciones asignadas). Las fechas coinciden con los
+--     hechos que las originan.
 -- ---------------------------------------------------------------------
 INSERT INTO notificacion (ID, ID_usuario, ID_incidencia, tipo, mensaje, fecha, leida) VALUES
-(1, 4, 3, 'incidencia validada',   'Tu incidencia fue validada.',                  DATE_SUB(NOW(), INTERVAL 11793 MINUTE), 'si'),  -- ~8,2 d
-(2, 4, 1, 'incidencia finalizada', 'Tu incidencia fue resuelta por la cuadrilla.', DATE_SUB(NOW(), INTERVAL 29073 MINUTE), 'no');  -- ~20,2 d
+(1, 4, 3, 'incidencia validada',   'Tu incidencia #3 fue validada.',                          DATE_SUB(NOW(), INTERVAL 11793 MINUTE), 'si'),
+(2, 4, 1, 'incidencia finalizada', 'Tu incidencia #1 fue resuelta por la cuadrilla.',         DATE_SUB(NOW(), INTERVAL 29073 MINUTE), 'no'),
+(3, 1, 6, 'nueva incidencia',      'Nueva incidencia #6: desbordado en Av. Rivera 3245, Buceo.', DATE_SUB(NOW(), INTERVAL 4304 MINUTE), 'si'),
+(4, 1, 8, 'nueva incidencia',      'Nueva incidencia #8: roto en Br. España 2650, Pocitos.',    DATE_SUB(NOW(), INTERVAL 3008 MINUTE), 'no'),
+(5, 1, NULL, 'instalacion llena',  'La instalación «Centro de Acopio Buceo» llegó al 85 % de su capacidad (alerta del 80 %).', DATE_SUB(NOW(), INTERVAL 600 MINUTE), 'no'),
+(6, 3, 8, 'intervencion asignada', 'Se te asignó la incidencia #8 (roto).',                    DATE_SUB(NOW(), INTERVAL 288 MINUTE), 'no'),
+(7, 3, 7, 'intervencion asignada', 'Se te asignó la incidencia #7 (roto).',                    DATE_SUB(NOW(), INTERVAL 287 MINUTE), 'no'),
+(8, 4, 7, 'incidencia asignada',   'Tu incidencia #7 fue asignada a una cuadrilla.',          DATE_SUB(NOW(), INTERVAL 287 MINUTE), 'no');
 
 -- =====================================================================
---  Fin del seed. 45 filas en 16 tablas.
---  Las 6 tablas restantes quedan vacías a propósito (ver el encabezado).
+--  Fin del seed.
 -- =====================================================================

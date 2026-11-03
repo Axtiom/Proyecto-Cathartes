@@ -20,6 +20,16 @@ $secciones = [
     ['slug' => 'informes',      'ruta' => 'informes',       'texto' => 'Informes'],
 ];
 $admin = $admin ?? ['nombre' => ''];
+
+// Avisos sin leer del administrador, para el globito de la campana. Si algo falla, el menú
+// se dibuja igual (una notificación nunca debe romper una pantalla).
+$sinLeer = 0;
+try {
+    require_once BASE_PATH . '/app/Models/Notificacion.php';
+    $sinLeer = isset($admin['id']) ? Notificacion::contarNoLeidas((int) $admin['id']) : 0;
+} catch (Throwable $e) {
+    error_log('[sidebar] ' . $e->getMessage());
+}
 ?>
 <aside class="bo-side">
     <div class="bo-side__marca">
@@ -58,6 +68,9 @@ $admin = $admin ?? ['nombre' => ''];
                    href="<?= e(ruta($s['ruta'])) ?>"><?= e($s['texto']) ?></a>
             <?php endif; ?>
         <?php endforeach; ?>
+        <a class="bo-nav__item<?= $activo === 'notificaciones' ? ' bo-nav__item--activo' : '' ?>" href="<?= e(ruta('notificaciones')) ?>">
+            Notificaciones<?php if ($sinLeer > 0): ?> <span class="bo-nav__n" title="<?= (int) $sinLeer ?> sin leer"><?= $sinLeer > 99 ? '99+' : (int) $sinLeer ?></span><?php endif; ?>
+        </a>
     </nav>
 
     <div class="bo-side__pie">

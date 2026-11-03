@@ -64,6 +64,10 @@ require BASE_PATH . '/app/Views/partials/head.php';
                 <div class="bo-dato"><span>Inicio</span><span><?= e($fh($iv['fecha_inicio'])) ?></span></div>
                 <div class="bo-dato"><span>Fin</span><span><?= $iv['fecha_fin'] ? e($fh($iv['fecha_fin'])) : '<span class="bo-dim">en curso</span>' ?></span></div>
                 <div class="bo-dato"><span>Tarea finalizada</span><span><?= $iv['tarea_finalizada'] === 'si' ? 'Sí' : 'No' ?></span></div>
+            <?php elseif ($inc['validada'] !== 'si'): ?>
+                <p class="bo-sub">Todavía sin cuadrilla. Primero validá el reporte: solo una incidencia validada se puede asignar.</p>
+            <?php elseif ($inc['estado'] === 'finalizada'): ?>
+                <p class="bo-dim">La incidencia ya está finalizada.</p>
             <?php else: ?>
                 <p class="bo-sub">Todavía sin cuadrilla. Asigná una para crear la intervención.</p>
                 <form method="post" action="<?= e(ruta('incidencias/asignar')) ?>">
@@ -78,6 +82,23 @@ require BASE_PATH . '/app/Views/partials/head.php';
                         </select>
                     </label>
                     <button type="submit" class="bo-btn bo-btn--pri" style="margin-top:10px">Asignar cuadrilla</button>
+                </form>
+            <?php endif; ?>
+        </div>
+
+        <div class="bo-panel" style="margin-top:16px">
+            <h2 class="bo-panel__tit">Cierre</h2>
+            <?php if ($inc['estado'] === 'finalizada'): ?>
+                <p class="bo-dim">Incidencia finalizada. El vecino ya fue notificado.</p>
+            <?php elseif ($inc['validada'] !== 'si'): ?>
+                <p class="bo-sub">Se puede cerrar una vez validada.</p>
+            <?php else: ?>
+                <p class="bo-sub" style="margin-bottom:10px">Normalmente la cierra la cuadrilla desde territorio. Si no puede, se cierra desde acá: la intervención abierta queda finalizada y se avisa al vecino.</p>
+                <form method="post" action="<?= e(ruta('incidencias/finalizar')) ?>"
+                      onsubmit="return confirm('¿Finalizar la incidencia #<?= (int) $inc['ID_incidencia'] ?>?');">
+                    <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
+                    <input type="hidden" name="id" value="<?= (int) $inc['ID_incidencia'] ?>">
+                    <button type="submit" class="bo-btn bo-btn--pri">Finalizar incidencia</button>
                 </form>
             <?php endif; ?>
         </div>

@@ -13,12 +13,15 @@ class PanelController extends Controller
     public function index(): void
     {
         $admin = Auth::exigir();
+        $periodo = array_key_exists($_GET['periodo'] ?? '', Panel::PERIODOS) ? (string) $_GET['periodo'] : 'mes';
         $this->vista('dashboard', [
             'activo'     => 'dashboard',
             'admin'      => $admin,
             'm'          => Panel::metricas(),
             'pendientes' => Panel::pendientes(8),
             'puntos'     => Panel::puntos(),
+            'periodo'    => $periodo,
+            'top'        => Panel::topDesbordados($periodo, 5),
             'sinCoords'  => Panel::sinCoordenadas(),
             'flash'      => $this->tomarFlash(),
             'csrf'       => Auth::csrf(),

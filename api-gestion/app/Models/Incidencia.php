@@ -92,7 +92,7 @@ class Incidencia
 
     /**
      * Alta de incidencia (reporte del vecino). Queda validada='no', estado='en
-     * curso' por default del DDL. Sin puntos acá: los 150 se acreditan al VALIDAR.
+     * curso' por default del DDL.
      * Devuelve el ID nuevo. La foto se adjunta después con guardarFoto().
      */
     public static function crear(int $idUsuario, int $idContenedor, string $tipo, ?string $descripcion): int
@@ -103,6 +103,21 @@ class Incidencia
         );
         $st->execute([$descripcion, $tipo, $idUsuario, $idContenedor]);
         return (int) Database::conexion()->lastInsertId();
+    }
+
+    /**
+     * Compensación: si después de crear la incidencia falla el guardado de la foto, se borra la
+     * fila. La foto es obligatoria (RF-16): una incidencia sin foto no puede quedar registrada.
+     * Solo se borra si todavía no tiene nada colgando (intervención ni notificaciones).
+     */
+    public static function descartarHuerfana(int $id): void
+    {
+        $pdo = Database::conexion();
+        $pdo->prepare('DELETE FROM notificacion WHERE ID_incidencia = ?')->execute([$id]);
+        $pdo->prepare(
+            'DELETE FROM incidencia_historial WHERE ID_incidencia = ?
+               AND NOT EXISTS (SELECT 1 FROM intervencion WHERE ID_incidencia = ?)'
+        )->execute([$id, $id]);
     }
 
     public static function guardarFoto(int $id, string $nombreArchivo): void

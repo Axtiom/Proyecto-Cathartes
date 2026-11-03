@@ -12,6 +12,7 @@ abstract class HttpTestCase extends BaseDatosTestCase
         'admin_comun'   => 'admin2@cathartes.uy',
         'operario'      => 'operario@cathartes.uy',
         'cuadrilla'     => 'cuadrilla@cathartes.uy',
+        'cuadrilla2'    => 'cuadrilla2@cathartes.uy',   // la crea el test que la necesita
         'vecino'        => 'vecino@correo.com',
     ];
 
@@ -105,6 +106,41 @@ abstract class HttpTestCase extends BaseDatosTestCase
         preg_match('/name="csrf" value="([^"]+)"/', $cuerpo, $m);
         $this->assertNotEmpty($m[1] ?? '', "no se encontró el token CSRF en $ruta");
         return $m[1];
+    }
+
+    protected function recoleccion(string $metodo, string $ruta, ?array $cuerpo = null, ?string $sesion = null): array
+    {
+        return $this->pedir($metodo, URL_RECOLECCION . $ruta, $cuerpo, $sesion);
+    }
+
+    /** Un PNG válido de 1x1 píxel (la API verifica los primeros bytes del archivo, no la extensión). */
+    protected const PNG_1X1 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
+    /**
+     * Reporta una incidencia como multipart (campos + archivo `foto`), igual que el formulario del vecino.
+     * @return array{0:int,1:array|null}
+     */
+    protected function reportar(string $sesion, array $campos, string $bytesFoto, string $nombre = 'foto.png', string $mime = 'image/png'): array
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'foto_');
+        file_put_contents($tmp, $bytesFoto);
+        $ch = curl_init(URL_GESTION . '/vecino/incidencias');
+        $jar = $this->jar($sesion);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true, CURLOPT_TIMEOUT => 10,
+            CURLOPT_COOKIEFILE => $jar, CURLOPT_COOKIEJAR => $jar,
+            CURLOPT_POSTFIELDS => $campos + ['foto' => new CURLFile($tmp, $mime, $nombre)]]);
+        $raw = (string) curl_exec($ch);
+        $codigo = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        @unlink($tmp);
+        return [$codigo, json_decode($raw, true)];
+    }
+
+    /** Envía un formulario del backoffice: toma el token CSRF de $paginaConFormulario y hace POST a $accion. */
+    protected function formulario(string $sesion, string $paginaConFormulario, string $accion, array $campos): array
+    {
+        $csrf = $this->csrf($sesion, $paginaConFormulario);
+        return $this->html('POST', $accion, ['csrf' => $csrf] + $campos, $sesion);
     }
 
     protected function tearDown(): void

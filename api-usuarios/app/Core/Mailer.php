@@ -5,9 +5,9 @@ declare(strict_types=1);
  * Envío de correo, config-driven por `.env` (MAIL_DRIVER=stub|smtp).
  *
  *  - stub  → escribe el mail (destino, asunto, cuerpo) en storage/mail.log.
- *            Es lo que usamos para probar 2FA y recuperación sin SMTP real.
+ *            Es lo que usamos para probar la recuperación de contraseña sin SMTP real.
  *  - smtp  → TODO. Como el proyecto no usa composer, PHPMailer habría que
- *            vendorearlo a mano; se cablea cuando Juan tenga las credenciales.
+ *            vendorearlo a mano; se cablea cuando el equipo tenga las credenciales.
  *            Por ahora cae al stub para no bloquear.
  */
 class Mailer

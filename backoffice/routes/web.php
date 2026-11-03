@@ -15,6 +15,11 @@ $router->post('/logout', 'AccesoController', 'logout');
 // Dashboard
 $router->get('/dashboard', 'PanelController', 'index');
 
+// Notificaciones del administrador
+$router->get('/notificaciones', 'NotificacionController', 'index');
+$router->post('/notificaciones/leer', 'NotificacionController', 'leer');
+$router->post('/notificaciones/leer-todas', 'NotificacionController', 'leerTodas');
+
 // Salud (sin auth)
 $router->get('/health', 'HealthController', 'index');
 
@@ -32,6 +37,7 @@ $router->get('/incidencias/ver', 'IncidenciaController', 'ver');
 $router->get('/incidencias/foto', 'IncidenciaController', 'foto');
 $router->post('/incidencias/validar', 'IncidenciaController', 'validar');
 $router->post('/incidencias/asignar', 'IncidenciaController', 'asignar');
+$router->post('/incidencias/finalizar', 'IncidenciaController', 'finalizar');
 
 // Contenedores (ABM)
 $router->get('/contenedores', 'ContenedorController', 'index');

@@ -53,6 +53,11 @@
             };
         });
 
+        // Las incidencias abiertas de esta cuadrilla en la ruta: un halo rojo alrededor del contenedor.
+        (datos.incidencias || []).forEach(function (i) {
+            if (i.latitud !== null && i.longitud !== null) marcadores.push(i);
+        });
+
         if (mapa) mapa.setMarcadores(marcadores);
         else mapa = C.Mapa.crear({ contenedor: '#mapa-cuadrilla', marcadores: marcadores, alto: '440px' });
 

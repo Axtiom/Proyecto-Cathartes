@@ -1,0 +1,41 @@
+# ============================================================================
+#  Cathartes — protecciones para Apache de XAMPP (Apache 2.4, mod_rewrite)
+#
+#  El proyecto se sirve completo desde htdocs (los frontends llaman a las APIs con rutas
+#  relativas, p. ej. ../api-usuarios/public). Por eso hay que CERRAR a mano lo que no es
+#  público: configuración, código, base de datos, tests y archivos subidos. Las carpetas
+#  internas se cierran con su propio .htaccess; este archivo cierra archivos sueltos y
+#  arregla la URL del backoffice.
+#
+#  Requiere AllowOverride All en htdocs (es el valor por defecto de XAMPP).
+# ============================================================================
+
+# Sin listado de carpetas.
+Options -Indexes
+
+# Archivos que nunca se sirven: variables de entorno (.env, con contraseñas), dumps y scripts SQL,
+# documentación interna, scripts de shell y configuración de herramientas.
+<FilesMatch "^\.(env|git)|\.(sql|md|sh|xml|yml|yaml|lock|log|bak|dist)$">
+    Require all denied
+</FilesMatch>
+
+# Cabeceras básicas de seguridad (si mod_headers está activo).
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# El login manda al administrador a <proyecto>/backoffice/<pantalla>. Con las apps colgando de
+# htdocs, la entrada real de cada pantalla es <proyecto>/backoffice/public/<pantalla>: se
+# redirige. El destino se arma con la ruta de la PROPIA URL (%1 = lo que hay antes de /backoffice),
+# así funciona con cualquier nombre de carpeta, o con el proyecto directamente en la raíz de htdocs.
+# (Un destino relativo no sirve: sin RewriteBase, Apache lo arma con la ruta del disco y da 404.)
+# No toca app/, config/ ni routes/ (esas carpetas están cerradas aparte).
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} ^(.*)/backoffice/?$
+    RewriteRule ^ %1/backoffice/public/ [R=302,L]
+    RewriteCond %{REQUEST_URI} ^(.*?)/backoffice/(?!(?:public|app|config|routes)(?:/|$))(.+)$
+    RewriteRule ^ %1/backoffice/public/%2 [R=302,L,QSA]
+</IfModule>

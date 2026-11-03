@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once BASE_PATH . '/app/Models/Notificacion.php';
+
 /**
  * Model de Incidencias del Backoffice (PDO directo a `cathartes`).
  *
@@ -111,30 +113,94 @@ class Incidencia
         )->fetchAll();
     }
 
-    /** Validar el reporte. Solo no -> si. */
-    public static function validar(int $id): bool
+    /** Datos mínimos de una incidencia para decidir y para armar los avisos. */
+    private static function base(int $id): ?array
     {
-        $st = Database::conexion()->prepare("UPDATE incidencia_historial SET validada='si' WHERE ID_incidencia=? AND validada='no'");
+        $st = Database::conexion()->prepare(
+            'SELECT ID_incidencia, tipo, validada, estado, ID_usuario FROM incidencia_historial WHERE ID_incidencia = ?'
+        );
         $st->execute([$id]);
-        return $st->rowCount() > 0;
+        return $st->fetch() ?: null;
     }
 
-    /** Asignar una cuadrilla creando una intervencion. Falla si ya está asignada. */
+    /** Validar el reporte. Solo no -> si. Avisa al vecino que lo reportó. */
+    public static function validar(int $id): bool
+    {
+        $inc = self::base($id);
+        $st = Database::conexion()->prepare("UPDATE incidencia_historial SET validada='si' WHERE ID_incidencia=? AND validada='no'");
+        $st->execute([$id]);
+        if ($st->rowCount() === 0) {
+            return false;
+        }
+        Notificacion::crear((int) $inc['ID_usuario'], 'incidencia validada', 'Tu incidencia #' . $id . ' fue validada.', $id);
+        return true;
+    }
+
+    /**
+     * Asignar una cuadrilla creando una intervencion. Reglas: la incidencia tiene que existir,
+     * estar VALIDADA (movilizar una cuadrilla es costoso: antes se verifica el reporte) y seguir
+     * en curso, y no puede tener ya una cuadrilla. Avisa al vecino y a la cuadrilla.
+     */
     public static function asignar(int $idInc, int $idCuadrilla): array
     {
         $pdo = Database::conexion();
+        $inc = self::base($idInc);
+        if ($inc === null) {
+            return ['ok' => false, 'error' => 'La incidencia no existe.'];
+        }
+        if ($inc['validada'] !== 'si') {
+            return ['ok' => false, 'error' => 'Validá la incidencia antes de asignarle una cuadrilla.'];
+        }
+        if ($inc['estado'] === 'finalizada') {
+            return ['ok' => false, 'error' => 'La incidencia ya está finalizada.'];
+        }
         $chk = $pdo->prepare('SELECT 1 FROM intervencion WHERE ID_incidencia = ? LIMIT 1');
         $chk->execute([$idInc]);
         if ($chk->fetchColumn()) {
             return ['ok' => false, 'error' => 'La incidencia ya tiene una cuadrilla asignada.'];
         }
-        $cu = $pdo->prepare("SELECT 1 FROM cuadrilla WHERE ID_usuario = ? LIMIT 1");
+        $cu = $pdo->prepare("SELECT 1 FROM cuadrilla c JOIN usuario u ON u.ID = c.ID_usuario WHERE c.ID_usuario = ? AND u.estado = 'activo' LIMIT 1");
         $cu->execute([$idCuadrilla]);
         if (!$cu->fetchColumn()) {
             return ['ok' => false, 'error' => 'Cuadrilla inválida.'];
         }
         $pdo->prepare("INSERT INTO intervencion (fecha_inicio, tarea_finalizada, ID_incidencia, ID_cuadrilla)
                        VALUES (NOW(), 'no', ?, ?)")->execute([$idInc, $idCuadrilla]);
+        Notificacion::crear((int) $inc['ID_usuario'], 'incidencia asignada', 'Tu incidencia #' . $idInc . ' fue asignada a una cuadrilla.', $idInc);
+        Notificacion::crear($idCuadrilla, 'intervencion asignada', 'Se te asignó la incidencia #' . $idInc . ' (' . $inc['tipo'] . ').', $idInc);
+        return ['ok' => true];
+    }
+
+    /**
+     * Cierra la incidencia desde el backoffice (la cuadrilla normalmente lo hace desde territorio;
+     * esto cubre el caso en que no puede). Solo una incidencia VALIDADA y en curso. Si tenía una
+     * intervención abierta, queda finalizada con fecha de fin. Avisa al vecino.
+     */
+    public static function finalizar(int $id): array
+    {
+        $inc = self::base($id);
+        if ($inc === null) {
+            return ['ok' => false, 'error' => 'La incidencia no existe.'];
+        }
+        if ($inc['estado'] === 'finalizada') {
+            return ['ok' => false, 'error' => 'La incidencia ya está finalizada.'];
+        }
+        if ($inc['validada'] !== 'si') {
+            return ['ok' => false, 'error' => 'Solo se puede finalizar una incidencia validada.'];
+        }
+        $pdo = Database::conexion();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare("UPDATE incidencia_historial SET estado = 'finalizada' WHERE ID_incidencia = ?")->execute([$id]);
+            $pdo->prepare("UPDATE intervencion SET tarea_finalizada = 'si', fecha_fin = NOW()
+                           WHERE ID_incidencia = ? AND tarea_finalizada = 'no'")->execute([$id]);
+            $pdo->commit();
+        } catch (Throwable $e) {
+            $pdo->rollBack();
+            error_log('[backoffice] Incidencia::finalizar: ' . $e->getMessage());
+            return ['ok' => false, 'error' => 'No se pudo finalizar la incidencia.'];
+        }
+        Notificacion::crear((int) $inc['ID_usuario'], 'incidencia finalizada', 'Tu incidencia #' . $id . ' fue resuelta.', $id);
         return ['ok' => true];
     }
 }

@@ -28,7 +28,7 @@
 --  REGISTRO DE ADICIONES AL MER
 --  ---------------------------------------------------------------------
 --  El MER esta congelado: no se inventan tablas ni columnas. Lo que sigue
---  son las unicas excepciones, cada una autorizada explicitamente por Juan
+--  son las unicas excepciones, cada una autorizada explicitamente por el equipo
 --  y ya aplicada mas abajo en este mismo archivo. Se listan aca para que el
 --  MER, el pasaje a tablas y el diccionario de datos se puedan actualizar
 --  sin tener que reconstruir la historia desde los commits.
@@ -71,7 +71,7 @@
 --  discrepancia deliberada tras BUG-003 (la ñ se corrompia al importar el
 --  dump). Ningun identificador de la base lleva ñ ni acentos.
 -- =====================================================================
---  DECISIONES DE "NO AGREGAR" (confirmadas por Juan - NO revertir)
+--  DECISIONES DE "NO AGREGAR" (confirmadas por el equipo - NO revertir)
 --  ---------------------------------------------------------------------
 --  Cosas que se evaluaron y se decidio NO poner en el esquema. Se dejan
 --  escritas para que no vuelvan a proponerse en cada fase:

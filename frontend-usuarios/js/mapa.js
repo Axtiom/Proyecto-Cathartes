@@ -36,7 +36,11 @@
             'desbordado':   '#F5B54A',
             'no funcional': '#F58A8A',
             'dado de baja': '#5E6690',
-            'en stock':     '#6FB2FB'
+            'en stock':     '#6FB2FB',
+            // Incidencias: ámbar = falta validarla, rojo = abierta, verde = resuelta.
+            'sin validar':  '#F5B54A',
+            'en curso':     '#F58A8A',
+            'finalizada':   '#38D07E'
         }[String(estado || '').toLowerCase()] || '#6E72A0';
     }
 
@@ -54,7 +58,7 @@
         wrap.style.cssText = 'min-width:160px;font-family:inherit';
         var t = document.createElement('div');
         t.style.cssText = 'font-weight:600;margin-bottom:2px';
-        t.textContent = (m.tipo === 'instalacion' ? 'Instalación' : 'Contenedor') + ' #' + m.id;
+        t.textContent = (m.tipo === 'instalacion' ? 'Instalación' : (m.tipo === 'incidencia' ? 'Incidencia' : 'Contenedor')) + ' #' + m.id;
         wrap.appendChild(t);
         if (m.titulo) { var n = document.createElement('div'); n.style.cssText = 'font-size:13px;margin-bottom:2px'; n.textContent = m.titulo; wrap.appendChild(n); }
         if (m.ubicacion) { var u = document.createElement('div'); u.style.cssText = 'font-size:12px;color:#666;margin-bottom:8px'; u.textContent = m.ubicacion; wrap.appendChild(u); }
@@ -113,7 +117,12 @@
             function dibujar(lista) {
                 capa.clearLayers();
                 var validos = [];
-                (lista || []).forEach(function (m) {
+                // Las incidencias se dibujan PRIMERO (como un halo) para que el contenedor, que está
+                // en el mismo punto, quede encima y siga siendo clickeable.
+                var ordenados = (lista || []).slice().sort(function (a, b) {
+                    return (a.tipo === 'incidencia' ? 0 : 1) - (b.tipo === 'incidencia' ? 0 : 1);
+                });
+                ordenados.forEach(function (m) {
                     if (m.latitud == null || m.longitud == null || isNaN(m.latitud) || isNaN(m.longitud)) {
                         // Coordenadas nulas: se omite sin romper y se reporta en consola.
                         if (window.console) console.warn('[Mapa] marcador sin coordenadas, omitido:', m.id, m.tipo);
@@ -121,10 +130,10 @@
                     }
                     validos.push(m);
                     var color = colorEstado(m.estado);
-                    var marker = L.circleMarker([m.latitud, m.longitud], {
-                        radius: m.tipo === 'instalacion' ? 10 : 8,
-                        color: '#0B1020', weight: 2, fillColor: color, fillOpacity: 0.95
-                    });
+                    var estilo = m.tipo === 'incidencia'
+                        ? { radius: 15, color: color, weight: 3, fillColor: color, fillOpacity: 0.12 }          // halo
+                        : { radius: m.tipo === 'instalacion' ? 10 : 8, color: '#0B1020', weight: 2, fillColor: color, fillOpacity: 0.95 };
+                    var marker = L.circleMarker([m.latitud, m.longitud], estilo);
                     marker.bindPopup(popupDom(m, opts.accion));
                     marker.on('click', function () { if (typeof opts.alSeleccionar === 'function') opts.alSeleccionar(m); });
                     capa.addLayer(marker);

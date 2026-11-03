@@ -1,0 +1,2 @@
+# Carpeta interna: nunca se sirve por web (Apache 2.4). Las apps entran solo por public/.
+Require all denied

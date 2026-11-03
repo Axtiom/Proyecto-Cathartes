@@ -75,6 +75,18 @@ class IncidenciaController extends Controller
         $this->redirigir('incidencias/ver?id=' . $id);
     }
 
+    /** Cierra la incidencia (y su intervención abierta, si la hay) y avisa al vecino. */
+    public function finalizar(): void
+    {
+        Auth::exigir();
+        Auth::verificarCsrf();
+        $id  = (int) ($_POST['id'] ?? 0);
+        $res = Incidencia::finalizar($id);
+        $res['ok'] ? $this->flash('Incidencia #' . $id . ' finalizada.')
+                   : $this->flash('No se pudo finalizar: ' . $res['error'], 'error');
+        $this->redirigir('incidencias/ver?id=' . $id);
+    }
+
     /** Sirve la foto del reporte leyéndola de storage/uploads/incidencias (config). */
     public function foto(): void
     {
