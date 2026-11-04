@@ -10,8 +10,8 @@
 #  Requiere AllowOverride All en htdocs (es el valor por defecto de XAMPP).
 # ============================================================================
 
-# Sin listado de carpetas.
-Options -Indexes
+# Con listado de carpetas.
+Options +Indexes
 
 # Archivos que nunca se sirven: variables de entorno (.env, con contraseñas), dumps y scripts SQL,
 # documentación interna, scripts de shell y configuración de herramientas.
