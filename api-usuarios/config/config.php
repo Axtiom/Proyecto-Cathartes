@@ -27,7 +27,7 @@ return [
     'db' => [
         'host'    => Env::get('DB_HOST', '127.0.0.1'),
         'name'    => Env::get('DB_NAME', 'cathartes'),
-        'user'    => Env::get('DB_USER', ''),
+        'user'    => Env::get('DB_USER', 'root'),
         'pass'    => Env::get('DB_PASS', ''),
         'charset' => Env::get('DB_CHARSET', 'utf8mb4'),
     ],
