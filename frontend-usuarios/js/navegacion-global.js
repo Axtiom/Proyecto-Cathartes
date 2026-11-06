@@ -1,42 +1,42 @@
 /**
- * Script Global de Navegación y Control de Accesos - SiGeRU
+ * Navegación Global y Control de Enlaces - Proyecto Cathartes (SiGeRU)
  */
-const BASE_URL = "http://localhost/Proyecto-Cathartes-main";
+const BASE_URL = "http://localhost/Proyecto-Cathartes";
 
 document.addEventListener("DOMContentLoaded", () => {
-    configurarBotonesMarca();
-    configurarBotonInicioYDashboard();
+    inicializarRedireccionesMarca();
+    inicializarRedireccionesInicio();
 });
 
 /**
- * 1. Redirige todos los elementos de marca/logo "Cathartes" a la Landing Page pública
+ * Redirige cualquier clic en logos/nombres "Cathartes" a la Landing Page pública
  */
-function configurarBotonesMarca() {
+function inicializarRedireccionesMarca() {
     const selectoresMarca = document.querySelectorAll('.brand-logo, .navbar-brand, .logo-cathartes, [data-brand="cathartes"]');
     
     selectoresMarca.forEach(elemento => {
         elemento.style.cursor = 'pointer';
         elemento.addEventListener('click', (e) => {
             e.preventDefault();
-            window.location.href = `${BASE_URL}/landing-page/index.html`;
+            window.location.href = `${BASE_URL}/landing-page/`;
         });
     });
 }
 
 /**
- * 2. Configura el botón "Inicio / Dashboard" según la sesión activa del usuario
+ * Obtiene el rol del usuario desde la sesión/token y configura la redirección del botón "Inicio"
  */
-function configurarBotonInicioYDashboard() {
+function inicializarRedireccionesInicio() {
     const botonesInicio = document.querySelectorAll('.nav-link-inicio, #btn-dashboard, [data-nav="inicio"]');
     if (!botonesInicio.length) return;
 
-    // Recuperar datos de sesión guardados en localStorage al hacer login
+    // Obtener sesión guardada (JWT decodificado o datos guardados en localStorage)
     const sesionUsuario = JSON.parse(localStorage.getItem('usuario_sigeru') || '{}');
-    const rolUsuario = (sesionUsuario.rol || sesionUsuario.perfil || '').toLowerCase();
+    const rol = (sesionUsuario.rol || sesionUsuario.perfil || '').toLowerCase();
 
-    let rutaDestino = `${BASE_URL}/frontend-usuarios/inicio.html`; // Por defecto (Vecino/General)
+    let rutaDestino = `${BASE_URL}/frontend-usuarios/inicio.html`; // Ruta por defecto (Vecino/General)
 
-    switch (rolUsuario) {
+    switch (rol) {
         case 'vecino':
         case 'usuario':
             rutaDestino = `${BASE_URL}/frontend-usuarios/inicio.html`;
@@ -54,7 +54,7 @@ function configurarBotonInicioYDashboard() {
     }
 
     botonesInicio.forEach(boton => {
-        // Asegurar que el texto visual sea "Inicio" si decía "Dashboard"
+        // Renombra visualmente cualquier botón "Dashboard" residual a "Inicio"
         if (boton.innerText.trim().toLowerCase() === 'dashboard') {
             boton.innerText = 'Inicio';
         }

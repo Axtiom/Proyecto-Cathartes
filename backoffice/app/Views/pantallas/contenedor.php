@@ -1,95 +1,121 @@
-<?php
-/**
- * Pantalla 4 — Editar contenedor + baja. Espera: $admin, $activo, $c, $rutaActual,
- * $flash, $csrf. El estado 'dado de baja' solo se alcanza por la acción de baja;
- * editar el estado a un valor operativo reactiva el contenedor.
- *
- * La ruta del contenedor no se edita acá: la ruta es la que decide por qué
- * contenedores pasa, así que el recorrido se administra en la Pantalla 7.
- */
-$titulo = 'Contenedor #' . (int) $c['ID'] . ' · Backoffice';
-$deBaja = $c['estado'] === 'dado de baja';
-$estadoSel = $deBaja ? 'funcional' : $c['estado'];
-$fh = fn($iso) => ($m = preg_match('/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/', (string) $iso, $x)) ? "$x[3]/$x[2]/$x[1] $x[4]:$x[5]" : '—';
-
-require BASE_PATH . '/app/Views/partials/head.php';
-?>
-
-<div class="bo-encab">
-    <div>
-        <a class="bo-btn bo-btn--sm bo-btn--tenue" href="<?= e(ruta('contenedores')) ?>">← Volver a contenedores</a>
-        <h1 style="margin-top:8px">Contenedor #<?= (int) $c['ID'] ?></h1>
-    </div>
-</div>
-
-<?php if ($flash): ?><div class="bo-aviso bo-aviso--<?= e($flash['tipo']) ?>"><?= e($flash['texto']) ?></div><?php endif; ?>
-
-<div class="bo-detalle">
-    <!-- Edición -->
-    <div class="bo-panel">
-        <h2 class="bo-panel__tit">Datos</h2>
-        <?php if ($deBaja): ?>
-            <div class="bo-aviso bo-aviso--error" style="margin-bottom:12px">Dado de baja el <?= e($fh($c['fecha_baja'])) ?>. Guardar los datos con un estado operativo lo reactiva.</div>
-        <?php endif; ?>
-        <form method="post" action="<?= e(ruta('contenedores/actualizar')) ?>">
-            <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
-            <input type="hidden" name="id" value="<?= (int) $c['ID'] ?>">
-            <label class="bo-campo"><span>Ubicación</span><input type="text" name="ubicacion" value="<?= e($c['ubicacion']) ?>" required></label>
-            <div class="bo-alta__fila">
-                <label class="bo-campo"><span>Tipo</span>
-                    <select name="tipo">
-                        <option value="basura"<?= $c['tipo'] === 'basura' ? ' selected' : '' ?>>Basura</option>
-                        <option value="reciclable"<?= $c['tipo'] === 'reciclable' ? ' selected' : '' ?>>Reciclable</option>
-                    </select>
-                </label>
-                <label class="bo-campo"><span>Estado</span>
-                    <select name="estado">
-                        <?php foreach (['funcional', 'no funcional', 'desbordado'] as $es): ?>
-                            <option value="<?= e($es) ?>"<?= $estadoSel === $es ? ' selected' : '' ?>><?= e(ucfirst($es)) ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </label>
-            </div>
-            <div class="bo-alta__fila">
-                <label class="bo-campo"><span>Latitud</span><input type="text" name="latitud" value="<?= e($c['latitud']) ?>"></label>
-                <label class="bo-campo"><span>Longitud</span><input type="text" name="longitud" value="<?= e($c['longitud']) ?>"></label>
-            </div>
-            <button type="submit" class="bo-btn bo-btn--pri" style="margin-top:6px">Guardar cambios</button>
-        </form>
-
-        <!-- La ruta NO se edita acá: el recorrido lo define la ruta, en su propia
-             pantalla. Se muestra como dato con un link para ir a cambiarlo. -->
-        <h2 class="bo-panel__tit" style="margin-top:22px">Recorrido</h2>
-        <div class="bo-dato">
-            <span>Ruta</span>
-            <span><?= e($rutaActual['zona'] . ' · ' . $rutaActual['nombre']) ?></span>
+<!-- Formulario de Alta de Contenedor / Instalación -->
+<form id="form-alta" action="" method="POST">
+    <div class="row">
+        <!-- Campos de Texto para la Dirección -->
+        <div class="col-md-4 mb-3">
+            <label for="calle" class="form-label">Calle (*)</label>
+            <input type="text" id="calle" name="calle" class="form-control" required placeholder="Ej: Felipe Sanguinetti">
         </div>
-        <p class="bo-sub" style="font-size:13px;margin:10px 0 0">
-            Por qué contenedores pasa cada ruta se define en la pantalla de la ruta.
-        </p>
-        <a class="bo-btn bo-btn--sm" style="margin-top:10px"
-           href="<?= e(ruta('rutas/editar') . '?id=' . (int) $c['ID_ruta']) ?>">Editar el recorrido de esta ruta</a>
+        <div class="col-md-2 mb-3">
+            <label for="numero" class="form-label">Número (*)</label>
+            <input type="text" id="numero" name="numero" class="form-control" required placeholder="Ej: 2683">
+        </div>
+        <div class="col-md-3 mb-3">
+            <label for="esquina" class="form-label">Esquina</label>
+            <input type="text" id="esquina" name="esquina" class="form-control" placeholder="Ej: Fray Bentos">
+        </div>
+        <div class="col-md-3 mb-3">
+            <label for="ubicacion_formateada" class="form-label">Ubicación Completa</label>
+            <input type="text" id="ubicacion_formateada" class="form-control bg-light" readonly placeholder="Formato automático">
+        </div>
     </div>
 
-    <!-- Baja -->
-    <div class="bo-panel">
-        <h2 class="bo-panel__tit">Baja</h2>
-        <?php if ($deBaja): ?>
-            <div class="bo-dato"><span>Estado</span><span class="bo-badge bo-badge--baja">dado de baja</span></div>
-            <div class="bo-dato"><span>Fecha de baja</span><span><?= e($fh($c['fecha_baja'])) ?></span></div>
-            <div class="bo-dato"><span>Motivo</span><span><?= e($c['motivo_baja'] ?: '—') ?></span></div>
-        <?php else: ?>
-            <p class="bo-sub">El contenedor no se elimina: la baja lo marca <em>dado de baja</em> y registra fecha y motivo.</p>
-            <form method="post" action="<?= e(ruta('contenedores/baja')) ?>">
-                <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
-                <input type="hidden" name="id" value="<?= (int) $c['ID'] ?>">
-                <label class="bo-campo"><span>Motivo de la baja</span>
-                    <input type="text" name="motivo" placeholder="Ej: reemplazado por deterioro" required>
-                </label>
-                <button type="submit" class="bo-btn bo-btn--peligro" style="margin-top:10px">Dar de baja</button>
-            </form>
-        <?php endif; ?>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="latitud" class="form-label">Latitud (*)</label>
+            <input type="text" id="latitud" name="latitud" class="form-control bg-light" readonly required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="longitud" class="form-label">Longitud (*)</label>
+            <input type="text" id="longitud" name="longitud" class="form-control bg-light" readonly required>
+        </div>
     </div>
-</div>
 
-<?php require BASE_PATH . '/app/Views/partials/foot.php'; ?>
+    <!-- Contenedor del Mapa Leaflet -->
+    <div class="mb-4">
+        <label class="form-label fw-bold">Seleccionar punto en el mapa de Montevideo:</label>
+        <div id="mapa-alta" style="height: 380px; width: 100%; border-radius: 8px; border: 1px solid #ced4da;"></div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar Registro</button>
+</form>
+
+<!-- Estilos y Script de Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Inicializar mapa centrado en Montevideo (-34.9011, -56.1674)
+    const mvdCoords = [-34.9011, -56.1674];
+    const map = L.map('mapa-alta').setView(mvdCoords, 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker = null;
+
+    // 2. Manejo de clic en el mapa
+    map.on('click', async (e) => {
+        const { lat, lng } = e.latlng;
+
+        // Posicionar o mover marcador
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+            marker.on('dragend', (event) => {
+                const pos = event.target.getLatLng();
+                procesarCoordenadas(pos.lat, pos.lng);
+            });
+        }
+
+        await procesarCoordenadas(lat, lng);
+    });
+
+    /**
+     * 3 y 4. Autocompletado de coordenadas y Geocodificación Inversa con OpenStreetMap Nominatim
+     */
+    async function procesarCoordenadas(lat, lng) {
+        const latFixed = lat.toFixed(6);
+        const lngFixed = lng.toFixed(6);
+
+        // Asignar inmediatamente los campos de latitud y longitud
+        document.getElementById('latitud').value = latFixed;
+        document.getElementById('longitud').value = lngFixed;
+
+        try {
+            // Consulta geocodificación inversa
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latFixed}&lon=${lngFixed}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            let calle = '';
+            let numero = '';
+            let esquina = '';
+
+            if (data && data.address) {
+                calle = data.address.road || data.address.pedestrian || '';
+                numero = data.address.house_number || '';
+                esquina = data.address.neighbourhood || data.address.suburb || '';
+
+                document.getElementById('calle').value = calle;
+                document.getElementById('numero').value = numero;
+                document.getElementById('esquina').value = esquina;
+            }
+
+            // Formato concatenado requerido: "Calle Número, esquina Esquina, Latitud, Longitud"
+            const parteCalleNum = calle ? `${calle} ${numero}`.trim() : 'Ubicación sin nombre';
+            const parteEsquina = esquina ? `, esquina ${esquina}` : '';
+            
+            document.getElementById('ubicacion_formateada').value = `${parteCalleNum}${parteEsquina}, ${latFixed}, ${lngFixed}`;
+
+        } catch (error) {
+            console.error("Error al geocodificar las coordenadas:", error);
+            document.getElementById('ubicacion_formateada').value = `Ubicación seleccionada, ${latFixed}, ${lngFixed}`;
+        }
+    }
+});
+</script>

@@ -1,124 +1,121 @@
-<?php
-/**
- * Pantalla 6 — Editar instalación. Espera: $admin, $activo, $i, $dep, $flash, $csrf.
- *
- * No hay baja lógica a propósito: `instalacion` no tiene columna de estado ni
- * `fecha_baja`, y el MER está congelado. En su lugar se puede ELIMINAR, pero solo si
- * nada depende de ella (es lo que las FK con ON DELETE RESTRICT protegen). El panel de
- * la derecha muestra lo que depende de la instalación.
- */
-$titulo = 'Instalación #' . (int) $i['ID'] . ' · Backoffice';
-$pc     = Instalacion::porcentaje($i);
-$nivel  = $pc >= Instalacion::UMBRAL ? 'alta' : ($pc >= 60 ? 'media' : 'baja');
-
-require BASE_PATH . '/app/Views/partials/head.php';
-?>
-
-<div class="bo-encab">
-    <div>
-        <a class="bo-btn bo-btn--sm bo-btn--tenue" href="<?= e(ruta('instalaciones')) ?>">← Volver a instalaciones</a>
-        <h1 style="margin-top:8px">Instalación #<?= (int) $i['ID'] ?> · <?= e($i['nombre']) ?></h1>
-    </div>
-</div>
-
-<?php if ($flash): ?><div class="bo-aviso bo-aviso--<?= e($flash['tipo']) ?>"><?= e($flash['texto']) ?></div><?php endif; ?>
-
-<?php if ($pc >= Instalacion::UMBRAL): ?>
-    <div class="bo-aviso bo-aviso--error">
-        Ocupación al <?= $pc ?>%: alcanzó el umbral de alerta del <?= Instalacion::UMBRAL ?>%. Conviene planificar una descarga.
-    </div>
-<?php endif; ?>
-
-<div class="bo-detalle">
-    <div class="bo-panel">
-        <h2 class="bo-panel__tit">Datos</h2>
-        <div class="bo-dato">
-            <span>Ocupación</span>
-            <span class="bo-ocupacion">
-                <span class="bo-ocupacion__n"><?= (int) $i['ocupacion_actual'] ?> / <?= (int) $i['capacidad'] ?> m³ · <?= $pc ?>%</span>
-                <span class="bo-barra bo-barra--<?= $nivel ?>"><span class="bo-barra__llena" style="width:<?= min(100, $pc) ?>%"></span></span>
-            </span>
+<!-- Formulario de Alta de Contenedor / Instalación -->
+<form id="form-alta" action="" method="POST">
+    <div class="row">
+        <!-- Campos de Texto para la Dirección -->
+        <div class="col-md-4 mb-3">
+            <label for="calle" class="form-label">Calle (*)</label>
+            <input type="text" id="calle" name="calle" class="form-control" required placeholder="Ej: Felipe Sanguinetti">
         </div>
-        <form method="post" action="<?= e(ruta('instalaciones/actualizar')) ?>" style="margin-top:8px">
-            <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
-            <input type="hidden" name="id" value="<?= (int) $i['ID'] ?>">
-            <label class="bo-campo"><span>Nombre</span><input type="text" name="nombre" value="<?= e($i['nombre']) ?>" required></label>
-            <label class="bo-campo"><span>Ubicación</span><input type="text" name="ubicacion" value="<?= e($i['ubicacion']) ?>" required></label>
-            <label class="bo-campo"><span>Tipo</span>
-                <select name="tipo">
-                    <?php foreach (Instalacion::TIPOS as $t): ?>
-                        <option value="<?= e($t) ?>"<?= $i['tipo'] === $t ? ' selected' : '' ?>><?= e(ucfirst($t)) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <div class="bo-alta__fila">
-                <label class="bo-campo"><span>Capacidad (m³)</span><input type="number" name="capacidad" min="1" value="<?= (int) $i['capacidad'] ?>" required></label>
-                <label class="bo-campo"><span>Ocupación actual (m³)</span><input type="number" name="ocupacion_actual" min="0" value="<?= (int) $i['ocupacion_actual'] ?>" required></label>
-            </div>
-            <div class="bo-alta__fila">
-                <label class="bo-campo"><span>Latitud <em>(opcional)</em></span><input type="text" name="latitud" value="<?= $i['latitud'] === null ? '' : e((string) $i['latitud']) ?>" placeholder="-34.9075"></label>
-                <label class="bo-campo"><span>Longitud <em>(opcional)</em></span><input type="text" name="longitud" value="<?= $i['longitud'] === null ? '' : e((string) $i['longitud']) ?>" placeholder="-56.1385"></label>
-            </div>
-            <button type="submit" class="bo-btn bo-btn--pri" style="margin-top:10px">Guardar cambios</button>
-        </form>
+        <div class="col-md-2 mb-3">
+            <label for="numero" class="form-label">Número (*)</label>
+            <input type="text" id="numero" name="numero" class="form-control" required placeholder="Ej: 2683">
+        </div>
+        <div class="col-md-3 mb-3">
+            <label for="esquina" class="form-label">Esquina</label>
+            <input type="text" id="esquina" name="esquina" class="form-control" placeholder="Ej: Fray Bentos">
+        </div>
+        <div class="col-md-3 mb-3">
+            <label for="ubicacion_formateada" class="form-label">Ubicación Completa</label>
+            <input type="text" id="ubicacion_formateada" class="form-control bg-light" readonly placeholder="Formato automático">
+        </div>
     </div>
 
-    <div class="bo-panel">
-        <h2 class="bo-panel__tit">Depende de esta instalación</h2>
-        <p class="bo-sub" style="font-size:13px;margin-bottom:12px">
-            Rutas, operarios y maquinaria referencian a la instalación. Solo se puede eliminar
-            cuando no queda nada asociado: reasigná primero lo que cuelga de ella.
-        </p>
-
-        <div class="bo-dato"><span>Maquinaria</span><span><?= (int) $dep['maquinaria'] ?></span></div>
-
-        <h3 class="bo-panel__tit" style="font-size:15px;margin:16px 0 6px">Rutas de destino (<?= count($dep['rutas']) ?>)</h3>
-        <?php if (!$dep['rutas']): ?>
-            <p class="bo-dim">Ninguna ruta descarga acá.</p>
-        <?php else: ?>
-            <ul class="bo-lista">
-                <?php foreach ($dep['rutas'] as $r): ?>
-                    <li>
-                        <span class="bo-mono">#<?= (int) $r['ID'] ?></span>
-                        <?= e($r['zona'] . ' · ' . $r['nombre']) ?>
-                        <span class="bo-badge bo-badge--<?= $r['estado'] === 'activa' ? 'ok' : 'baja' ?>"><?= e($r['estado']) ?></span>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
-
-        <h3 class="bo-panel__tit" style="font-size:15px;margin:16px 0 6px">Operarios asignados (<?= count($dep['operarios']) ?>)</h3>
-        <?php if (!$dep['operarios']): ?>
-            <p class="bo-dim">Sin operarios asignados.</p>
-        <?php else: ?>
-            <ul class="bo-lista">
-                <?php foreach ($dep['operarios'] as $o): ?>
-                    <li>
-                        <span class="bo-mono">#<?= (int) $o['ID'] ?></span>
-                        <?= e($o['nombre']) ?>
-                        <span class="bo-badge bo-badge--<?= $o['estado'] === 'activo' ? 'ok' : 'baja' ?>"><?= e($o['estado']) ?></span>
-                    </li>
-                <?php endforeach; ?>
-            </ul>
-        <?php endif; ?>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label for="latitud" class="form-label">Latitud (*)</label>
+            <input type="text" id="latitud" name="latitud" class="form-control bg-light" readonly required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label for="longitud" class="form-label">Longitud (*)</label>
+            <input type="text" id="longitud" name="longitud" class="form-control bg-light" readonly required>
+        </div>
     </div>
-</div>
 
-<?php $sinDep = !$dep['rutas'] && !$dep['operarios'] && (int) $dep['maquinaria'] === 0; ?>
-<div class="bo-panel" style="margin-top:16px">
-    <h2 class="bo-panel__tit">Eliminar instalación</h2>
-    <?php if (!$sinDep): ?>
-        <p class="bo-dim">No se puede eliminar mientras tenga rutas, operarios o maquinaria asociados.</p>
-        <button type="button" class="bo-btn bo-btn--peligro bo-btn--off" disabled>Eliminar</button>
-    <?php else: ?>
-        <p class="bo-sub" style="font-size:13px;margin-bottom:12px">No tiene nada asociado: se puede eliminar. La acción es definitiva.</p>
-        <form method="post" action="<?= e(ruta('instalaciones/eliminar')) ?>"
-              onsubmit="return confirm('¿Eliminar definitivamente la instalación #<?= (int) $i['ID'] ?>?');">
-            <input type="hidden" name="csrf" value="<?= e($csrf) ?>">
-            <input type="hidden" name="id" value="<?= (int) $i['ID'] ?>">
-            <button type="submit" class="bo-btn bo-btn--peligro">Eliminar</button>
-        </form>
-    <?php endif; ?>
-</div>
+    <!-- Contenedor del Mapa Leaflet -->
+    <div class="mb-4">
+        <label class="form-label fw-bold">Seleccionar punto en el mapa de Montevideo:</label>
+        <div id="mapa-alta" style="height: 380px; width: 100%; border-radius: 8px; border: 1px solid #ced4da;"></div>
+    </div>
 
-<?php require BASE_PATH . '/app/Views/partials/foot.php'; ?>
+    <button type="submit" class="btn btn-primary">Guardar Registro</button>
+</form>
+
+<!-- Estilos y Script de Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Inicializar mapa centrado en Montevideo (-34.9011, -56.1674)
+    const mvdCoords = [-34.9011, -56.1674];
+    const map = L.map('mapa-alta').setView(mvdCoords, 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker = null;
+
+    // 2. Manejo de clic en el mapa
+    map.on('click', async (e) => {
+        const { lat, lng } = e.latlng;
+
+        // Posicionar o mover marcador
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+            marker.on('dragend', (event) => {
+                const pos = event.target.getLatLng();
+                procesarCoordenadas(pos.lat, pos.lng);
+            });
+        }
+
+        await procesarCoordenadas(lat, lng);
+    });
+
+    /**
+     * 3 y 4. Autocompletado de coordenadas y Geocodificación Inversa con OpenStreetMap Nominatim
+     */
+    async function procesarCoordenadas(lat, lng) {
+        const latFixed = lat.toFixed(6);
+        const lngFixed = lng.toFixed(6);
+
+        // Asignar inmediatamente los campos de latitud y longitud
+        document.getElementById('latitud').value = latFixed;
+        document.getElementById('longitud').value = lngFixed;
+
+        try {
+            // Consulta geocodificación inversa
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latFixed}&lon=${lngFixed}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            let calle = '';
+            let numero = '';
+            let esquina = '';
+
+            if (data && data.address) {
+                calle = data.address.road || data.address.pedestrian || '';
+                numero = data.address.house_number || '';
+                esquina = data.address.neighbourhood || data.address.suburb || '';
+
+                document.getElementById('calle').value = calle;
+                document.getElementById('numero').value = numero;
+                document.getElementById('esquina').value = esquina;
+            }
+
+            // Formato concatenado requerido: "Calle Número, esquina Esquina, Latitud, Longitud"
+            const parteCalleNum = calle ? `${calle} ${numero}`.trim() : 'Ubicación sin nombre';
+            const parteEsquina = esquina ? `, esquina ${esquina}` : '';
+            
+            document.getElementById('ubicacion_formateada').value = `${parteCalleNum}${parteEsquina}, ${latFixed}, ${lngFixed}`;
+
+        } catch (error) {
+            console.error("Error al geocodificar las coordenadas:", error);
+            document.getElementById('ubicacion_formateada').value = `Ubicación seleccionada, ${latFixed}, ${lngFixed}`;
+        }
+    }
+});
+</script>
