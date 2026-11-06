@@ -1,94 +1,58 @@
 <?php
-declare(strict_types=1);
+namespace App\Core;
 
-/**
- * Token firmado propio (HMAC-SHA256), sin librería ni tabla de tokens.
- *
- * Formato: base64url(json(payload)) . "." . base64url(hmac)
- * Firma con el secreto del .env; comparación con hash_equals.
- *
- * Dos tipos, mismo mecanismo. Cada payload lleva `typ` y validar() RECHAZA un
- * token cuyo `typ` no sea el esperado (evita reusar un token de un flujo en otro):
- *
- *   - sesion → {id, rol, exp, typ}   (token de sesión, se emite en el login)
- *   - reset  → {id, exp, typ}        (recuperación de contraseña, 1 hora)
- *
- * La revocación por cuenta (kill-switch) NO vive acá: el guard Auth re-chequea
- * usuario.estado='activo' contra la base en cada request protegido.
- */
-class Token
-{
-    private const TTL_RESET = 3600; // 1 hora
+class Token {
+    // Clave secreta para entorno de desarrollo local
+    private static $secret_key = "SiGeRU_Secret_Key_UTU_2026_Development";
 
-    public static function emitirSesion(int $id, string $rol): string
-    {
-        return self::emitir([
-            'id'  => $id,
-            'rol' => $rol,
-            'typ' => 'sesion',
-        ], (int) Config::get('token.ttl', 7776000));
-    }
+    /**
+     * Genera un JWT válido para desarrollo local (Expiración predeterminada: 24 horas)
+     */
+    public static function generarToken(array $data, int $expiracionHoras = 24): string {
+        $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
+        $payload = json_encode(array_merge($data, [
+            'iat' => time(),
+            'exp' => time() + ($expiracionHoras * 3600)
+        ]));
 
-    public static function emitirReset(int $id): string
-    {
-        return self::emitir([
-            'id'  => $id,
-            'typ' => 'reset',
-        ], self::TTL_RESET);
+        $base64UrlHeader = self::base64UrlEncode($header);
+        $base64UrlPayload = self::base64UrlEncode($payload);
+
+        $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, self::$secret_key, true);
+        $base64UrlSignature = self::base64UrlEncode($signature);
+
+        return $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
     }
 
     /**
-     * Valida firma, expiración y tipo. Devuelve el payload o null.
+     * Valida la firma del token y comprueba que no esté expirado
      */
-    public static function validar(string $token, string $typEsperado): ?array
-    {
+    public static function validarToken(string $token): ?object {
         $partes = explode('.', $token);
-        if (count($partes) !== 2) {
-            return null;
+        if (count($partes) !== 3) return null;
+
+        list($header, $payload, $signature) = $partes;
+
+        $validSignature = self::base64UrlEncode(
+            hash_hmac('sha256', $header . "." . $payload, self::$secret_key, true)
+        );
+
+        if ($signature !== $validSignature) return null;
+
+        $datosPayload = json_decode(self::base64UrlDecode($payload));
+
+        if (isset($datosPayload->exp) && $datosPayload->exp < time()) {
+            return null; // Token expirado
         }
 
-        [$cuerpo, $firma] = $partes;
-
-        if (!hash_equals(self::firmar($cuerpo), $firma)) {
-            return null;
-        }
-
-        $payload = json_decode(self::b64UrlDecode($cuerpo), true);
-        if (!is_array($payload) || !isset($payload['exp'], $payload['typ'])) {
-            return null;
-        }
-
-        if ((int) $payload['exp'] < time()) {
-            return null;
-        }
-
-        if (!hash_equals((string) $payload['typ'], $typEsperado)) {
-            return null;
-        }
-
-        return $payload;
+        return $datosPayload;
     }
 
-    private static function emitir(array $payload, int $ttl): string
-    {
-        $payload['exp'] = time() + $ttl;
-        $cuerpo = self::b64UrlEncode((string) json_encode($payload, JSON_UNESCAPED_UNICODE));
-        return $cuerpo . '.' . self::firmar($cuerpo);
+    private static function base64UrlEncode(string $text): string {
+        return str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($text));
     }
 
-    private static function firmar(string $cuerpo): string
-    {
-        $secreto = (string) Config::get('token.secret', '');
-        return self::b64UrlEncode(hash_hmac('sha256', $cuerpo, $secreto, true));
-    }
-
-    private static function b64UrlEncode(string $bin): string
-    {
-        return rtrim(strtr(base64_encode($bin), '+/', '-_'), '=');
-    }
-
-    private static function b64UrlDecode(string $texto): string
-    {
-        return (string) base64_decode(strtr($texto, '-_', '+/'));
+    private static function base64UrlDecode(string $text): string {
+        return base64_decode(str_replace(['-', '_'], ['+', '/'], $text));
     }
 }

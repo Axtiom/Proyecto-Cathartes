@@ -1,78 +1,102 @@
-<!DOCTYPE html>
-<!-- ============================================================================
-     Pantalla: REPORTAR incidencia (formulario con foto obligatoria).
-     Datos: API Gestión (GET /contenedores para el selector, POST /vecino/incidencias).
-     JS que la acompaña: js/pantallas/reportar.js
-     Etiquetas, ayudas y tipos de incidencia escritos a mano; el selector de
-     contenedores se llena desde la tabla contenedor por API.
-============================================================================= -->
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportar incidencia · Cathartes</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="assets/leaflet/leaflet.css">
-    <link rel="stylesheet" href="css/estilos.css">
-    <link rel="stylesheet" href="css/app.css">
-</head>
-<body class="app">
-    <div data-shell-header></div>
-
-    <main class="app-main">
-        <h1 class="app-main__titulo">Reportar incidencia</h1>
-        <p class="app-main__sub">Elegí el contenedor, sacá o subí una foto y contanos qué pasa.</p>
-
-        <form class="form-app" id="r-form">
-            <div class="campo-app">
-                <label for="r-contenedor">Contenedor</label>
-                <select id="r-contenedor" required>
-                    <option value="">Elegí un contenedor…</option>
-                </select>
-                <div class="campo-app__ayuda">Ubicación: <span id="r-ubicacion">—</span></div>
-                <div id="reportar-mapa" style="margin-top:10px"></div>
+<!-- CONTENEDOR DEL MAPA Y FORMULARIO DE UBICACIÓN -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Ubicación Geográfica (Montevideo)</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <!-- Mapa interactivo -->
+            <div class="col-md-7 mb-3">
+                <label class="form-label fw-bold">Haga clic en el mapa para seleccionar la ubicación:</label>
+                <div id="mapa-selector" style="height: 400px; width: 100%; border-radius: 8px; border: 1px solid #ced4da;"></div>
             </div>
-
-            <div class="campo-app foto-campo">
-                <label>Foto <span style="color:var(--rojo)">*</span> (obligatoria)</label>
-                <div class="foto-drop" id="r-drop">
-                    <span id="r-drop-txt">Tocá para elegir una foto (PNG o JPG, hasta 10 MB)</span>
-                    <img class="foto-preview" id="r-preview" alt="Vista previa" hidden>
+            
+            <!-- Campos estructurados -->
+            <div class="col-md-5">
+                <div class="mb-3">
+                    <label for="input-calle" class="form-label">Calle y Número (*)</label>
+                    <input type="text" id="input-calle" class="form-control" required placeholder="Ej: Felipe Sanguinetti 2683">
                 </div>
-                <input type="file" id="r-foto" accept="image/png,image/jpeg">
+                <div class="mb-3">
+                    <label for="input-esquina" class="form-label">Esquina (Opcional)</label>
+                    <input type="text" id="input-esquina" class="form-control" placeholder="Ej: Fray Bentos">
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label for="input-lat" class="form-label">Latitud</label>
+                        <input type="text" id="input-lat" class="form-control bg-light" readonly>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label for="input-lng" class="form-label">Longitud</label>
+                        <input type="text" id="input-lng" class="form-control bg-light" readonly>
+                    </div>
+                </div>
+                <div class="form-text text-muted">
+                    Las coordenadas y la dirección se completan automáticamente al marcar el punto en el mapa.
+                </div>
             </div>
+        </div>
+    </div>
+</div>
 
-            <div class="campo-app">
-                <label for="r-tipo">Tipo de incidencia</label>
-                <select id="r-tipo" required>
-                    <option value="">Elegí un tipo…</option>
-                    <option value="desbordado">desbordado</option>
-                    <option value="roto">roto</option>
-                    <option value="falta de recoleccion">falta de recoleccion</option>
-                </select>
-            </div>
+<!-- Dependencias CSS y JS de Leaflet (Asegúrate de incluirlas si no las tienes en el head) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-            <div class="campo-app">
-                <label for="r-desc">Descripción (opcional)</label>
-                <textarea id="r-desc" placeholder="Contanos algún detalle…"></textarea>
-            </div>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Coordenadas centrales de Montevideo por defecto
+    const mvdLat = -34.9011;
+    const mvdLng = -56.1645;
 
-            <button type="submit" class="cta" id="r-enviar" disabled>Reportar incidencia</button>
-        </form>
-    </main>
+    // Inicializar el mapa centrado en Montevideo
+    const map = L.map('mapa-selector').setView([mvdLat, mvdLng], 13);
 
-    <div data-shell-footer></div>
+    // Capa de mapa base (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>window.L || document.write('<script src="assets/leaflet/leaflet.js"><\/script>');</script>
-    <script src="js/api.js"></script>
-    <script src="js/componentes/toast.js"></script>
-    <script src="js/mapa.js"></script>
-    <script src="js/layout.js"></script>
-    <script src="js/guardia.js"></script>
-    <script src="js/pantallas/reportar.js"></script>
-</body>
-</html>
+    let marker = null;
+
+    // Evento de clic sobre el mapa
+    map.on('click', async function(e) {
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+
+        // Actualizar o colocar el marcador gráfico
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+
+        // Rellenar campos de latitud y longitud
+        document.getElementById('input-lat').value = lat.toFixed(6);
+        document.getElementById('input-lng').value = lng.toFixed(6);
+
+        // Petición de Geocodificación Inversa (Nominatim)
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`);
+            const data = await response.json();
+
+            if (data && data.address) {
+                const road = data.address.road || '';
+                const houseNumber = data.address.house_number || '';
+                
+                // Construir Calle y Número
+                const calleNum = houseNumber ? `${road} ${houseNumber}` : road;
+                document.getElementById('input-calle').value = calleNum || 'Ubicación seleccionada en mapa';
+
+                // Intentar capturar cruce o esquina si la API lo provee
+                const esquinaRef = data.address.pedestrian || data.address.suburb || '';
+                document.getElementById('input-esquina').value = esquinaRef;
+            }
+        } catch (error) {
+            console.error("No se pudo resolver la dirección automáticamente:", error);
+            document.getElementById('input-calle').value = `Coordenadas: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        }
+    });
+});
+</script>
