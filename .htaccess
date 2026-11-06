@@ -1,18 +1,20 @@
-# Habilitar RewriteEngine e Indexación de Directorios para Desarrollo Local
+# ==========================================
+# CONFIGURACIÓN GENERAL .HTACCESS - SiGeRU
+# ==========================================
+
 Options +Indexes +FollowSymLinks
 RewriteEngine On
 
-# Configuración Global de Encabezados CORS
+# Encabezados CORS globales para permitir comunicación limpia entre APIs y Frontends
 <IfModule mod_headers.c>
     Header set Access-Control-Allow-Origin "*"
     Header set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
     Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
 </IfModule>
 
-# Permitir acceso total a todos los recursos
 DirectoryIndex index.html index.php
 
-# Garantizar que las subcarpetas sean accesibles directamente
+# Garantizar acceso libre a directorios locales
 <Directory />
     AllowOverride All
     Require all granted
